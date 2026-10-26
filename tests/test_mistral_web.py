@@ -77,12 +77,12 @@ class MistralWebScriptTests(unittest.TestCase):
         self.assertEqual(payload['vibe_total'], 50.0)
 
     def test_comma_decimals(self):
-        payload = self.run_fixture(fixture_html(('1,33', '12,75'), ('24,64', '127,5')))
+        payload = self.run_fixture(fixture_html(('2,50', '25,00'), ('5,00', '50,00')))
         self.assertEqual(payload['status'], 'ok')
-        self.assertEqual(payload['api_used'], 1.33)
-        self.assertEqual(payload['api_total'], 12.75)
-        self.assertEqual(payload['vibe_used'], 24.64)
-        self.assertEqual(payload['vibe_total'], 127.5)
+        self.assertEqual(payload['api_used'], 2.5)
+        self.assertEqual(payload['api_total'], 25.0)
+        self.assertEqual(payload['vibe_used'], 5.0)
+        self.assertEqual(payload['vibe_total'], 50.0)
 
     def test_thousands_separators(self):
         payload = self.run_fixture(fixture_html(('1.275,50', '12.750,00'), None))

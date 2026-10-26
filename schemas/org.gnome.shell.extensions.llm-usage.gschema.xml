@@ -59,42 +59,12 @@
     <key name="provider-mistral-enabled" type="b">
       <default>true</default>
       <summary>Mistral provider enabled</summary>
-      <description>Whether to show Mistral (Firefox session fetch or manual monthly entry)</description>
+      <description>Whether to show Mistral (Firefox session fetch)</description>
     </key>
     <key name="panel-provider" type="s">
       <default>'codex'</default>
       <summary>Panel provider</summary>
       <description>Which provider the panel percentage reflects: 'codex', 'antigravity', 'copilot' or 'mistral'</description>
-    </key>
-    <key name="mistral-manual-enabled" type="b">
-      <default>false</default>
-      <summary>Mistral manual entry enabled</summary>
-      <description>Whether to show the manually entered Mistral monthly allowances</description>
-    </key>
-    <key name="mistral-api-used" type="d">
-      <default>0.0</default>
-      <summary>Mistral API/Studio used</summary>
-      <description>Manually entered used amount of the included monthly API/Studio allowance, in EUR</description>
-    </key>
-    <key name="mistral-api-total" type="d">
-      <default>0.0</default>
-      <summary>Mistral API/Studio included</summary>
-      <description>Manually entered total of the included monthly API/Studio allowance, in EUR</description>
-    </key>
-    <key name="mistral-vibe-used" type="d">
-      <default>0.0</default>
-      <summary>Mistral Vibe Code used</summary>
-      <description>Manually entered used amount of the included monthly Vibe Code allowance, in EUR</description>
-    </key>
-    <key name="mistral-vibe-total" type="d">
-      <default>0.0</default>
-      <summary>Mistral Vibe Code included</summary>
-      <description>Manually entered total of the included monthly Vibe Code allowance, in EUR</description>
-    </key>
-    <key name="mistral-manual-updated-at" type="s">
-      <default>''</default>
-      <summary>Mistral manual entry timestamp</summary>
-      <description>When the manual Mistral amounts were last edited (ISO 8601)</description>
     </key>
     <key name="mistral-firefox-enabled" type="b">
       <default>false</default>

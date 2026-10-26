@@ -19,7 +19,6 @@ import {
     normalizeAgy,
     normalizeCopilot,
     monthlyResetIso,
-    buildMistralManualSnapshot,
     buildMistralWebSnapshot,
 } from '../../lib/contract.js';
 
@@ -261,33 +260,11 @@ check('monthly reset from mid-month',
 check('monthly reset rolls the year',
     monthlyResetIso(new Date('2026-12-15T00:00:00Z')) === '2027-01-01T00:00:00.000Z');
 
-const manualSnap = buildMistralManualSnapshot({
-    apiUsed: 1.33,
-    apiTotal: 12.75,
-    vibeUsed: 24.64,
-    vibeTotal: 127.5,
-    updatedAt: '2026-10-26T10:00:00Z',
-});
-check('mistral manual ok', manualSnap !== null && manualSnap.status === STATUS.OK);
-check('mistral manual two pools', manualSnap.windows.length === 2);
-check('mistral manual currency unit',
-    manualSnap.windows[0].unit === 'currency' && manualSnap.windows[0].currency === 'EUR');
-check('mistral api used percent', approx(manualSnap.windows[0].usedPercent, 10.43, 0.01));
-check('mistral vibe used percent', approx(manualSnap.windows[1].usedPercent, 19.32, 0.01));
-check('mistral manual amounts kept',
-    manualSnap.windows[0].usedAmount === 1.33 && manualSnap.windows[0].totalAmount === 12.75);
-check('mistral pools never summed', manualSnap.windows[0].totalAmount !== 140.25);
-check('mistral monthly resetsAt', manualSnap.windows[0].resetsAt === monthlyResetIso());
-check('mistral capturedAt passthrough',
-    manualSnap.capturedAt === '2026-10-26T10:00:00.000Z');
-check('mistral manual flag', manualSnap.extras?.manual === true);
-check('mistral manual empty is null', buildMistralManualSnapshot({}) === null);
-
 const webSnap = buildMistralWebSnapshot({
-    apiUsed: 1.33,
-    apiTotal: 12.75,
-    vibeUsed: 26.9,
-    vibeTotal: 127.5,
+    apiUsed: 1.50,
+    apiTotal: 20.00,
+    vibeUsed: 6.00,
+    vibeTotal: 60.00,
     capturedAt: '2026-10-26T12:00:00.000Z',
 });
 check('mistral web ok', webSnap !== null && webSnap.status === STATUS.OK);
@@ -295,7 +272,8 @@ check('mistral web two pools', webSnap.windows.length === 2);
 check('mistral web source flag', webSnap.extras?.source === 'firefox-web');
 check('mistral web has no manual flag', webSnap.extras?.manual === undefined);
 check('mistral web capturedAt passthrough', webSnap.capturedAt === '2026-10-26T12:00:00.000Z');
-check('mistral web vibe amount', approx(webSnap.windows[1].usedAmount, 26.9, 0.001));
+check('mistral web vibe amount', approx(webSnap.windows[1].usedAmount, 6.0, 0.001));
+check('mistral web pools never summed', webSnap.windows[0].totalAmount !== 80.00);
 check('mistral web monthly resetsAt', webSnap.windows[0].resetsAt === monthlyResetIso());
 const webVibeOnly = buildMistralWebSnapshot({vibeUsed: 5.0, vibeTotal: 50.0});
 check('mistral web vibe-only single pool', webVibeOnly !== null && webVibeOnly.windows.length === 1);

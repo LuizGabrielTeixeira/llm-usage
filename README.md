@@ -6,12 +6,18 @@ Click the panel indicator for the full breakdown, scroll the mouse wheel over it
 
 > Fork of [kevinpita/codex-usage-extension](https://github.com/kevinpita/codex-usage-extension) (MIT), itself a fork of [Haletran/claude-usage-extension](https://github.com/Haletran/claude-usage-extension) (MIT). Menu/UI inspired by ClaudeCodeUsage (GPL) — **no GPL code or assets were copied**.
 
+---
+
+<p align="center">
+  <img src="icons/llm-usage.png" alt="LLM Usage" width="220">
+</p>
+
 ## Features
 
 - Panel percentage + progress bar + ring for the selected provider
 - Per-provider sections with every quota window (e.g. Antigravity shows all its quota groups and both the weekly and 5-hour windows)
 - Request counters where the plan is metered by requests (Copilot Premium Interactions: `4 / 200 requests`)
-- Euro-denominated monthly pools for Mistral (`€1.33 / €12.75`)
+- Euro-denominated monthly pools for Mistral (`€5.00 / €50.00`)
 - Reset countdowns per window
 - Mouse-wheel cycling between providers (like GNOME workspace switching)
 - Provider submenu with checkmark on the active provider
@@ -26,7 +32,7 @@ Click the panel indicator for the full breakdown, scroll the mouse wheel over it
 | **Codex** | `chatgpt.com` backend (`wham/usage`), reads the local Codex CLI session (`~/.codex/auth.json`) | [Codex CLI](https://developers.openai.com/codex/cli/) signed in |
 | **Antigravity** | `agy` CLI usage report in JSON print mode (`agy -p /usage --output-format json`) | Antigravity CLI (`agy`) ≥ 1.1.11, signed in |
 | **Copilot** | GitHub Copilot user quota endpoint (`api.github.com/copilot_internal/user`) using your GitHub CLI token | [GitHub CLI](https://cli.github.com/) (`gh`) signed in |
-| **Mistral** | `admin.mistral.ai/subscription` page, fetched with your existing Firefox session (opt-in) — or manual monthly EUR entry | Firefox signed in to admin.mistral.ai, or nothing (manual) |
+| **Mistral** | `admin.mistral.ai/subscription` page, fetched with your existing Firefox session (opt-in) | Firefox signed in to admin.mistral.ai |
 
 Codex, Antigravity and Copilot are read-only public/user endpoints; nothing is ever posted anywhere.
 
@@ -38,15 +44,15 @@ Mistral's official usage API (Admin API) is **Enterprise-only** — a Pro Studen
 2. It reads the `admin.mistral.ai` session cookie **in memory only** and performs one GET of the subscription page.
 3. The two independent monthly pools (API/Studio and Vibe Code, both EUR) are parsed from the server-rendered HTML and shown as meters with an automatic "resets on the 1st" date.
 
-The cookie is **never** stored, logged or written to GSettings. If you don't want any browser reading, leave the toggle off and use the manual monthly entry instead — both paths never mix, and the extension always shows an honest state (never fake zeros).
+The cookie is **never** stored, logged or written to GSettings. If you don't want any browser reading, leave the toggle off — the extension then shows an honest blocked state (never fake zeros).
 
-Supported for the automatic fetch: native/Flatpak/Snap Firefox, Zen and LibreWolf. Chromium-family browsers encrypt their cookies and are not supported — use manual entry there.
+Supported for the automatic fetch: native/Flatpak/Snap Firefox, Zen and LibreWolf. Chromium-family browsers encrypt their cookies and are not supported (the extension shows a clear sign-in state there).
 
 ## Privacy & security
 
 - **No credentials are ever stored.** Codex and Copilot tokens are read from the CLIs you already trust (`~/.codex/auth.json`, `gh auth token`) and used in memory for a single request.
 - **The Mistral Firefox cookie** lives in memory for one request and is then discarded; the temporary copy of `cookies.sqlite` is `chmod 0600`, in a private temp dir, deleted immediately after reading (see above).
-- **GSettings contains no secrets** — only UI preferences and, if you use manual mode, the four EUR amounts you typed yourself.
+- **GSettings contains no secrets** — only UI preferences and opt-in toggles. No amounts are stored at all.
 - Nothing is telemetry'd, uploaded, or shared. The extension makes no requests other than the usage endpoints listed in the table above.
 - Errors are honest and actionable: signed out, quota page changed, provider disabled — each with advice on how to fix it.
 
@@ -102,7 +108,7 @@ gjs -m tools/validate-sources.js           # real one-shot fetch of all enabled 
 
 ## Icons
 
-Place `icons/<provider>.svg` or `icons/<provider>.png` (`codex`, `antigravity`, `copilot`, `mistral`) to override the panel icon per provider; `icon-22.png` is the fallback. Transparent PNG at 32px or a normal SVG works best; see `icons/README.md`.
+Place `icons/<provider>.svg` or `icons/<provider>.png` (`codex`, `antigravity`, `copilot`, `mistral`) to override the panel icon per provider — there is no extension-level fallback, so a provider without an icon simply shows no icon. Transparent PNG at 32px or a normal SVG works best; see `icons/README.md`.
 
 ## Credits & license
 

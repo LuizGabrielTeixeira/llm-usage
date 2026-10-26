@@ -23,8 +23,6 @@ EXPECTED_SCHEMA_KEYS = {
     'provider-codex-enabled', 'provider-antigravity-enabled',
     'provider-copilot-enabled', 'provider-mistral-enabled',
     'panel-provider',
-    'mistral-manual-enabled', 'mistral-api-used', 'mistral-api-total',
-    'mistral-vibe-used', 'mistral-vibe-total', 'mistral-manual-updated-at',
     'mistral-firefox-enabled',
 }
 
@@ -60,14 +58,6 @@ class SchemaTests(unittest.TestCase):
 
     def test_panel_provider_default_codex(self):
         self.assertEqual(self._default('panel-provider'), "'codex'")
-
-    def test_mistral_defaults(self):
-        self.assertEqual(self._default('mistral-manual-enabled'), 'false')
-        for key in ('mistral-api-used', 'mistral-api-total',
-                    'mistral-vibe-used', 'mistral-vibe-total'):
-            self.assertEqual(float(self._default(key)), 0.0,
-                             f'{key} must default to 0.0 (never user amounts)')
-        self.assertEqual(self._default('mistral-manual-updated-at'), "''")
 
     def test_mistral_firefox_fetch_opt_in(self):
         self.assertEqual(
@@ -111,9 +101,12 @@ class MetadataTests(unittest.TestCase):
         self.assertTrue(self.metadata.get('shell-version'),
                         'shell-version must be a non-empty list')
 
-    def test_panel_icon_file_exists(self):
-        icon = ROOT / 'icon-22.png'
-        self.assertTrue(icon.is_file(), 'panel/header icon file must exist')
+    def test_provider_icon_files_exist(self):
+        for provider in ('codex', 'antigravity', 'copilot', 'mistral'):
+            files = [ROOT / 'icons' / f'{provider}.svg',
+                     ROOT / 'icons' / f'{provider}.png']
+            self.assertTrue(any(f.is_file() for f in files),
+                            f'icons/{provider}.svg|png must exist')
 
 
 class ModuleResolutionTests(unittest.TestCase):
@@ -272,14 +265,15 @@ class ProviderSelectorTests(unittest.TestCase):
 
 
 class ProviderIconTests(unittest.TestCase):
-    """Per-provider panel icons resolve from icons/<id>.svg|png with a
-    graceful fallback to the bundled codex icon."""
+    """Per-provider panel icons resolve from icons/<id>.svg|png.
+    There is no extension-level fallback icon — a provider without an
+    icon file simply shows no icon in the panel."""
 
     def test_icon_lookup_mechanism(self):
         source = (ROOT / 'extension.js').read_text()
         self.assertIn("'icons'", source)
         self.assertIn('svg', source)
-        self.assertIn('icon-22.png', source)
+        self.assertNotIn('llm-usage.png', source)
         self.assertIn('_providerIconGicon', source)
 
     def test_icons_readme_documents_formats(self):

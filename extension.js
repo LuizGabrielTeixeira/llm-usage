@@ -198,10 +198,7 @@ const UsageIndicator = GObject.registerClass(
             this._lastScrollMs = 0;
 
             const box = new St.BoxLayout({style_class: 'codex-panel'});
-            const iconPath = GLib.build_filenamev([this._extensionPath, 'icon-22.png']);
-            this._defaultIconGicon = Gio.icon_new_for_string(iconPath);
             this._icon = new St.Icon({
-                gicon: this._defaultIconGicon,
                 style_class: 'codex-panel-icon',
                 icon_size: 16,
                 y_align: Clutter.ActorAlign.CENTER,
@@ -355,7 +352,8 @@ const UsageIndicator = GObject.registerClass(
         }
 
         _updateIconVisibility() {
-            this._icon.visible = this._settings.get_boolean('show-icon');
+            this._icon.visible =
+                this._settings.get_boolean('show-icon') && this._icon.gicon !== null;
         }
 
         _updateIconStyle() {
@@ -572,20 +570,12 @@ const UsageIndicator = GObject.registerClass(
                 this._updateResetSummary(snap);
             }
 
-            if (snap.extras?.manual) {
-                this._limitsBox.add_child(wrapLabel(new St.Label({
-                    text: 'Manual monthly entry - automatic fetching requires a browser session (credentials are never stored).',
-                    style_class: 'codex-note',
-                })));
-            }
-
             if (snap.capturedAt) {
                 const parsed = GLib.DateTime.new_from_iso8601(snap.capturedAt, null);
                 const local = parsed?.to_local();
                 if (local) {
-                    const prefix = snap.extras?.manual ? 'Entered' : 'Updated';
                     this._limitsBox.add_child(new St.Label({
-                        text: `${prefix} ${local.format('%Y-%m-%d %H:%M')}`,
+                        text: `Updated ${local.format('%Y-%m-%d %H:%M')}`,
                         style_class: 'codex-updated',
                     }));
                 }
@@ -703,15 +693,13 @@ const UsageIndicator = GObject.registerClass(
                             break;
                         }
                     } catch (e) {
-                        // fall back to the default icon below
+                        // no icon for this provider - stay without an icon
                     }
                 }
-                if (!this._iconGiconByProvider.has(favorite))
-                    this._iconGiconByProvider.set(favorite, this._defaultIconGicon);
             }
             return favorite
-                ? (this._iconGiconByProvider.get(favorite) ?? this._defaultIconGicon)
-                : this._defaultIconGicon;
+                ? (this._iconGiconByProvider.get(favorite) ?? null)
+                : null;
         }
 
         _renderPanel() {
@@ -720,6 +708,7 @@ const UsageIndicator = GObject.registerClass(
             const snap = favorite ? this._snapshots.get(favorite) : null;
 
             this._icon.gicon = this._providerIconGicon(favorite);
+            this._updateIconVisibility();
 
             if (!snap || snap.status === STATUS.LOADING) {
                 this._label.text = '...';

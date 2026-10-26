@@ -10,9 +10,9 @@ can have its own icon file in this directory:
 | Copilot     | `copilot.svg` or `copilot.png`   |
 | Mistral     | `mistral.svg` or `mistral.png`   |
 
-If no file exists for a provider, the extension falls back to
-`icon-22.png` at the extension root — so nothing breaks if the folder
-is empty or partially filled.
+If no file exists for a provider, the panel simply shows no icon for that
+provider (the icon slot is hidden — everything else keeps working). There is
+no extension-level fallback icon.
 
 ## What GNOME Shell accepts
 
@@ -34,6 +34,8 @@ is showing.
 
 ## Notes
 
+- `llm-usage.png` in this directory is the repository/README logo only —
+  the extension does not read it.
 - Current files: `codex.svg` and `copilot.svg` are all-white versions
   (root `fill="#ffffff"`); `mistral.svg` keeps the brand gradient;
   `antigravity.png` is a direct 32px render of the original 2.4 MB SVG
@@ -41,7 +43,7 @@ is showing.
   `private/antigravity-original-2.4MB.svg` to keep the install light).
   The 32px PNG is pixel-identical to the SVG at HiDPI panel size and
   measured visually equivalent at 16px.
-- Restart GNOME Shell (log out and back in, or run the `update` script)
+- Restart GNOME Shell (log out and back in, or run the `install` script)
   after adding files here.
 - Brand logos are trademarks of their owners; use assets you are licensed
   to use. Do not copy assets from GPL-licensed projects (see the warning in

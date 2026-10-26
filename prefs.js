@@ -4,19 +4,12 @@ import Gio from 'gi://Gio';
 
 import {ExtensionPreferences} from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
 
-const MISTRAL_AMOUNT_KEYS = [
-    ['mistral-api-used', 'API / Studio used'],
-    ['mistral-api-total', 'API / Studio included'],
-    ['mistral-vibe-used', 'Vibe Code used'],
-    ['mistral-vibe-total', 'Vibe Code included'],
-];
-
 export default class CodexUsagePreferences extends ExtensionPreferences {
     fillPreferencesWindow(window) {
         const settings = this.getSettings();
 
         const page = new Adw.PreferencesPage({
-            title: 'Codex Usage Settings',
+            title: 'LLM Usage Settings',
             icon_name: 'preferences-system-symbolic',
         });
         window.add(page);
@@ -56,7 +49,7 @@ export default class CodexUsagePreferences extends ExtensionPreferences {
             ['provider-codex-enabled', 'Codex', 'ChatGPT backend usage via the local Codex CLI session'],
             ['provider-antigravity-enabled', 'Antigravity', 'Reads the agy usage report (requires a signed-in agy CLI)'],
             ['provider-copilot-enabled', 'Copilot', 'GitHub Copilot quota via the GitHub CLI session'],
-            ['provider-mistral-enabled', 'Mistral', 'Firefox session fetch or manual monthly entry - see the Mistral group below'],
+            ['provider-mistral-enabled', 'Mistral', 'Fetches admin.mistral.ai through your Firefox session - see the Mistral group below'],
         ];
         for (const [key, title, subtitle] of providerRows) {
             const row = new Adw.SwitchRow({title, subtitle});
@@ -219,7 +212,7 @@ export default class CodexUsagePreferences extends ExtensionPreferences {
 
         const mistralGroup = new Adw.PreferencesGroup({
             title: 'Mistral',
-            description: 'Mistral Pro Student allowances are only visible in the Mistral console (browser session)',
+            description: 'Mistral allowances are only visible in the Mistral console (browser session)',
         });
         page.add(mistralGroup);
 
@@ -235,39 +228,8 @@ export default class CodexUsagePreferences extends ExtensionPreferences {
         );
         mistralGroup.add(firefoxRow);
 
-        const manualRow = new Adw.SwitchRow({
-            title: 'Manual Monthly Entry',
-            subtitle: 'Show your monthly Mistral allowances from amounts you enter here',
-        });
-        settings.bind(
-            'mistral-manual-enabled',
-            manualRow,
-            'active',
-            Gio.SettingsBindFlags.DEFAULT
-        );
-        mistralGroup.add(manualRow);
-
-        for (const [key, title] of MISTRAL_AMOUNT_KEYS) {
-            const row = new Adw.SpinRow({
-                title,
-                subtitle: 'in EUR',
-                adjustment: new Gtk.Adjustment({
-                    lower: 0,
-                    upper: 100000,
-                    step_increment: 0.01,
-                    page_increment: 1,
-                    value: settings.get_double(key),
-                }),
-            });
-            settings.bind(key, row, 'value', Gio.SettingsBindFlags.DEFAULT);
-            row.connect('notify::value', () => {
-                settings.set_string('mistral-manual-updated-at', new Date().toISOString());
-            });
-            mistralGroup.add(row);
-        }
-
         const mistralHint = new Gtk.Label({
-            label: 'Firefox mode: sign in to admin.mistral.ai in Firefox once and the extension reads the page directly. Manual mode: enter the amounts from the console usage page; they reset on the first day of each month. Only amounts are stored - never credentials.',
+            label: 'Sign in to admin.mistral.ai in Firefox once and the extension reads the page directly. Allowances reset on the first day of each month. Nothing is stored - never credentials, never cookies.',
             xalign: 0,
             css_classes: ['dim-label', 'caption'],
             margin_start: 12,
