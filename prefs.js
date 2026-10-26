@@ -4,6 +4,13 @@ import Gio from 'gi://Gio';
 
 import {ExtensionPreferences} from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
 
+const MISTRAL_AMOUNT_KEYS = [
+    ['mistral-api-used', 'API / Studio used'],
+    ['mistral-api-total', 'API / Studio included'],
+    ['mistral-vibe-used', 'Vibe Code used'],
+    ['mistral-vibe-total', 'Vibe Code included'],
+];
+
 export default class CodexUsagePreferences extends ExtensionPreferences {
     fillPreferencesWindow(window) {
         const settings = this.getSettings();
@@ -16,7 +23,7 @@ export default class CodexUsagePreferences extends ExtensionPreferences {
 
         const generalGroup = new Adw.PreferencesGroup({
             title: 'General',
-            description: 'Configure the Codex Usage extension',
+            description: 'AI subscription usage monitor (Codex, Antigravity, Copilot, Mistral)',
         });
         page.add(generalGroup);
 
@@ -38,6 +45,48 @@ export default class CodexUsagePreferences extends ExtensionPreferences {
             Gio.SettingsBindFlags.DEFAULT
         );
         generalGroup.add(refreshRow);
+
+        const providersGroup = new Adw.PreferencesGroup({
+            title: 'Providers',
+            description: 'Choose which subscriptions are monitored and which one drives the panel',
+        });
+        page.add(providersGroup);
+
+        const providerRows = [
+            ['provider-codex-enabled', 'Codex', 'ChatGPT backend usage via the local Codex CLI session'],
+            ['provider-antigravity-enabled', 'Antigravity', 'Reads the agy usage report (requires a signed-in agy CLI)'],
+            ['provider-copilot-enabled', 'Copilot', 'GitHub Copilot quota via the GitHub CLI session'],
+            ['provider-mistral-enabled', 'Mistral', 'Firefox session fetch or manual monthly entry - see the Mistral group below'],
+        ];
+        for (const [key, title, subtitle] of providerRows) {
+            const row = new Adw.SwitchRow({title, subtitle});
+            settings.bind(key, row, 'active', Gio.SettingsBindFlags.DEFAULT);
+            providersGroup.add(row);
+        }
+
+        const panelProviderRow = new Adw.ComboRow({
+            title: 'Panel Provider',
+            subtitle: 'Which subscription the panel percentage reflects',
+        });
+        const panelProviderModel = new Gtk.StringList();
+        panelProviderModel.append('Codex');
+        panelProviderModel.append('Antigravity');
+        panelProviderModel.append('Copilot');
+        panelProviderModel.append('Mistral');
+        panelProviderRow.set_model(panelProviderModel);
+
+        const currentProvider = settings.get_string('panel-provider');
+        panelProviderRow.set_selected(currentProvider === 'antigravity' ? 1
+            : currentProvider === 'copilot' ? 2
+                : currentProvider === 'mistral' ? 3
+                    : 0);
+
+        panelProviderRow.connect('notify::selected', () => {
+            const selected = panelProviderRow.get_selected();
+            const providers = ['codex', 'antigravity', 'copilot', 'mistral'];
+            settings.set_string('panel-provider', providers[selected]);
+        });
+        providersGroup.add(panelProviderRow);
 
         const displayGroup = new Adw.PreferencesGroup({
             title: 'Panel Display',
@@ -74,23 +123,25 @@ export default class CodexUsagePreferences extends ExtensionPreferences {
 
         const panelWindowRow = new Adw.ComboRow({
             title: 'Panel Reflects',
-            subtitle: 'Choose the usage window used for panel color and percentage',
+            subtitle: 'Choose which quota the panel percentage follows',
         });
 
         const panelWindowModel = new Gtk.StringList();
-        panelWindowModel.append('Most constrained');
-        panelWindowModel.append('5-hour window');
-        panelWindowModel.append('7-day window');
+        panelWindowModel.append('Biggest allowance');
+        panelWindowModel.append('Most used');
+        panelWindowModel.append('First window');
+        panelWindowModel.append('Second window');
         panelWindowRow.set_model(panelWindowModel);
 
         const currentPanelWindow = settings.get_string('panel-window');
-        panelWindowRow.set_selected(currentPanelWindow === 'primary' ? 1
-            : currentPanelWindow === 'secondary' ? 2
-                : 0);
+        panelWindowRow.set_selected(currentPanelWindow === 'max' ? 1
+            : currentPanelWindow === 'primary' ? 2
+                : currentPanelWindow === 'secondary' ? 3
+                    : 0);
 
         panelWindowRow.connect('notify::selected', () => {
             const selected = panelWindowRow.get_selected();
-            const windows = ['max', 'primary', 'secondary'];
+            const windows = ['largest', 'max', 'primary', 'secondary'];
             settings.set_string('panel-window', windows[selected]);
         });
 
@@ -138,7 +189,7 @@ export default class CodexUsagePreferences extends ExtensionPreferences {
 
         const showIconRow = new Adw.SwitchRow({
             title: 'Show Icon',
-            subtitle: 'Display the Codex icon in the top bar',
+            subtitle: 'Display the extension icon in the top bar',
         });
         settings.bind(
             'show-icon',
@@ -147,18 +198,6 @@ export default class CodexUsagePreferences extends ExtensionPreferences {
             Gio.SettingsBindFlags.DEFAULT
         );
         displayGroup.add(showIconRow);
-
-        const showTierRow = new Adw.SwitchRow({
-            title: 'Show Tier',
-            subtitle: 'Display the detected plan or CODEX fallback in the top bar',
-        });
-        settings.bind(
-            'show-tier',
-            showTierRow,
-            'active',
-            Gio.SettingsBindFlags.DEFAULT
-        );
-        displayGroup.add(showTierRow);
 
         const menuGroup = new Adw.PreferencesGroup({
             title: 'Menu',
@@ -177,6 +216,65 @@ export default class CodexUsagePreferences extends ExtensionPreferences {
             Gio.SettingsBindFlags.DEFAULT
         );
         menuGroup.add(additionalLimitsRow);
+
+        const mistralGroup = new Adw.PreferencesGroup({
+            title: 'Mistral',
+            description: 'Mistral Pro Student allowances are only visible in the Mistral console (browser session)',
+        });
+        page.add(mistralGroup);
+
+        const firefoxRow = new Adw.SwitchRow({
+            title: 'Fetch from Firefox session',
+            subtitle: 'Reads your admin.mistral.ai session cookie from Firefox (in memory only - never stored)',
+        });
+        settings.bind(
+            'mistral-firefox-enabled',
+            firefoxRow,
+            'active',
+            Gio.SettingsBindFlags.DEFAULT
+        );
+        mistralGroup.add(firefoxRow);
+
+        const manualRow = new Adw.SwitchRow({
+            title: 'Manual Monthly Entry',
+            subtitle: 'Show your monthly Mistral allowances from amounts you enter here',
+        });
+        settings.bind(
+            'mistral-manual-enabled',
+            manualRow,
+            'active',
+            Gio.SettingsBindFlags.DEFAULT
+        );
+        mistralGroup.add(manualRow);
+
+        for (const [key, title] of MISTRAL_AMOUNT_KEYS) {
+            const row = new Adw.SpinRow({
+                title,
+                subtitle: 'in EUR',
+                adjustment: new Gtk.Adjustment({
+                    lower: 0,
+                    upper: 100000,
+                    step_increment: 0.01,
+                    page_increment: 1,
+                    value: settings.get_double(key),
+                }),
+            });
+            settings.bind(key, row, 'value', Gio.SettingsBindFlags.DEFAULT);
+            row.connect('notify::value', () => {
+                settings.set_string('mistral-manual-updated-at', new Date().toISOString());
+            });
+            mistralGroup.add(row);
+        }
+
+        const mistralHint = new Gtk.Label({
+            label: 'Firefox mode: sign in to admin.mistral.ai in Firefox once and the extension reads the page directly. Manual mode: enter the amounts from the console usage page; they reset on the first day of each month. Only amounts are stored - never credentials.',
+            xalign: 0,
+            css_classes: ['dim-label', 'caption'],
+            margin_start: 12,
+            margin_top: 4,
+            wrap: true,
+        });
+        mistralGroup.add(mistralHint);
 
         const networkGroup = new Adw.PreferencesGroup({
             title: 'Network',

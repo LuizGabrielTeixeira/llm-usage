@@ -1,3 +1,6 @@
 *.compiled
+__pycache__/
+*.pyc
 /.codex
 /.direnv
+/private/
