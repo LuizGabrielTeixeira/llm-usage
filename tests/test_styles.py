@@ -92,5 +92,45 @@ class PanelBarStyleTests(unittest.TestCase):
                          'panel bar track must be translucent white')
 
 
+class MeterStyleTests(unittest.TestCase):
+    """Menu meter styling guards (user report 2026-10-26)."""
+
+    def setUp(self):
+        self.css = Path('stylesheet.css').read_text()
+
+    def _body(self, cls):
+        match = re.search(re.escape(cls) + r'\s*\{(?P<body>[^}]*)\}',
+                          self.css, re.DOTALL)
+        self.assertIsNotNone(match, f'{cls} missing from stylesheet.css')
+        return match.group('body')
+
+    def test_menu_fill_is_white(self):
+        # 'coloca o preenchimento da barra tambem em branco como as fontes'
+        # - applies to .codex-fill, the shared class of every provider bar.
+        self.assertRegex(self._body('.codex-fill'),
+                         r'\bbackground-color:\s*#ffffff\s*;',
+                         'menu bar fill must be white like the fonts')
+
+    def test_track_width_matches_popup(self):
+        # The popup has a fixed width and St.BoxLayout children x-fill, so a
+        # narrower CSS track width would paint a wider track than the fill's
+        # reference and the bar would look short of full even at 100%.
+        popup = re.search(r'\bwidth:\s*(\d+)px', self._body('.codex-popup'))
+        track = re.search(r'\bwidth:\s*(\d+)px', self._body('.codex-track'))
+        self.assertIsNotNone(popup, '.codex-popup must pin its width')
+        self.assertIsNotNone(track, '.codex-track must pin its width')
+        self.assertEqual(int(track.group(1)), int(popup.group(1)),
+                         '.codex-track width must match .codex-popup width')
+
+    def test_panel_icon_has_right_margin(self):
+        # 'mover o icon dos providers um tititico a esquerda' - the icon
+        # needs breathing room so its gap to the bar matches the gap from
+        # the bar to the right-aligned numbers.
+        margin = re.search(r'\bmargin-right:\s*(\d+)px', self._body('.codex-panel-icon'))
+        self.assertIsNotNone(margin,
+                             '.codex-panel-icon must set margin-right')
+        self.assertGreaterEqual(int(margin.group(1)), 4)
+
+
 if __name__ == '__main__':
     unittest.main()

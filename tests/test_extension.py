@@ -337,9 +337,15 @@ class CopilotRequestsDisplayTests(unittest.TestCase):
 
 class BarFullnessTests(unittest.TestCase):
     """A "100%" reading must render a completely full bar everywhere.
-    The panel text rounds to an integer, so ~99.5%+ reads "100%" there;
-    the panel bar (50px) rounds to full, but the menu bar (300px) used to
-    show a visible 1-3px gap at the same value (user report 2026-10-26)."""
+    Two independent causes were fixed after the user report 2026-10-26:
+    (1) rounding: the panel text rounds to an integer (~99.5%+ reads
+    "100%") while bars rounded fractional pixels short - all renderers
+    now clamp through snapFullPercent.
+    (2) geometry: the menu popup is 320px wide and St.BoxLayout children
+    are x-filled by default, so the track paints at its allocated width
+    while the fill was capped at a fixed TRACK_WIDTH=300 - a permanent
+    ~20px gap even at 100%. The fill now follows the track's allocated
+    width (notify::allocation + _syncFill) instead of a fixed constant."""
 
     def setUp(self):
         self.source = (ROOT / 'extension.js').read_text()
@@ -351,6 +357,13 @@ class BarFullnessTests(unittest.TestCase):
     def test_meter_clamps_via_snap_helper(self):
         self.assertNotIn('Math.max(0, Math.min(100, util))', self.source,
                          'renderers must clamp through snapFullPercent')
+
+    def test_meter_fill_follows_track_allocation(self):
+        self.assertIn('notify::allocation', self.source,
+                      'meter fill must resync when the track is allocated')
+        self.assertIn('_syncFill', self.source)
+        self.assertNotIn('TRACK_WIDTH', self.source,
+                         'fixed-width fills under-fill stretched tracks')
 
 
 class MenuCleanlinessTests(unittest.TestCase):

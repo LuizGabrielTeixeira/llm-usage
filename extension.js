@@ -30,7 +30,6 @@ import {CopilotSource} from './lib/copilotSource.js';
 import {MistralSource} from './lib/mistralSource.js';
 import {ProviderCoordinator} from './lib/coordinator.js';
 
-const TRACK_WIDTH = 300;
 const PANEL_BAR_WIDTH = 50;
 const RING_SIZE = 18;
 const RING_WIDTH = 3;
@@ -70,6 +69,13 @@ class Meter {
         this._fill = new St.Widget({style_class: 'codex-fill'});
         this._track.add_child(this._fill);
 
+        this._util = 0;
+        // The track stretches to the popup width (St.BoxLayout children
+        // are x-filled by default), so the fill must follow the track's
+        // allocated width: a fixed 300px fill inside the 320px popup left
+        // a permanent gap even at 100% (user report 2026-10-26).
+        this._track.connect('notify::allocation', () => this._syncFill());
+
         this._caption = new St.Label({text: '', style_class: 'codex-caption'});
 
         this.root.add_child(row);
@@ -77,10 +83,16 @@ class Meter {
         this.root.add_child(this._caption);
     }
 
+    _syncFill() {
+        this._fill.set_width(
+            Math.max(0, Math.round((this._util / 100) * this._track.get_width())));
+    }
+
     setValue(util, caption, colorUtil = util, displayValue = util, displaySuffix = 'used') {
         const clamped = snapFullPercent(util);
+        this._util = clamped;
         this._pct.text = `${displayValue.toFixed(1)}% ${displaySuffix}`;
-        this._fill.set_width(Math.round((clamped / 100) * TRACK_WIDTH));
+        this._syncFill();
         this._fill.style_class = `codex-fill ${severity(colorUtil)}`;
         this._caption.text = caption ?? '';
         this._caption.visible = !!caption;
@@ -88,8 +100,9 @@ class Meter {
 
     setAmount(displayText, util, colorUtil = util, caption = null) {
         const clamped = snapFullPercent(util);
+        this._util = clamped;
         this._pct.text = displayText;
-        this._fill.set_width(Math.round((clamped / 100) * TRACK_WIDTH));
+        this._syncFill();
         this._fill.style_class = `codex-fill ${severity(colorUtil)}`;
         this._caption.text = caption ?? '';
         this._caption.visible = !!caption;
@@ -97,7 +110,8 @@ class Meter {
 
     setMuted(detail = '-') {
         this._pct.text = detail;
-        this._fill.set_width(0);
+        this._util = 0;
+        this._syncFill();
         this._fill.style_class = 'codex-fill';
         this._caption.visible = false;
     }
