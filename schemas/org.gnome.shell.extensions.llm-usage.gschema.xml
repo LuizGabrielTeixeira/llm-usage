@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist gettext-domain="llm-usage">
+  <schema id="org.gnome.shell.extensions.llm-usage" path="/org/gnome/shell/extensions/llm-usage/">
+    <key name="refresh-interval" type="i">
+      <default>300</default>
+      <summary>Refresh interval</summary>
+      <description>How often to refresh usage data in seconds</description>
+    </key>
+    <key name="display-mode" type="s">
+      <default>'ring'</default>
+      <summary>Display mode</summary>
+      <description>How to display usage in the panel: 'ring' for a circular gauge and percentage, 'text' for percentage text, 'bar' for a progress bar, or 'both' for bar and percentage</description>
+    </key>
+    <key name="panel-window" type="s">
+      <default>'largest'</default>
+      <summary>Panel usage window</summary>
+      <description>Which usage window the panel reflects: 'largest' for the window with the biggest allowance, 'max' for the most used window, 'primary' for the first window, or 'secondary' for the second window</description>
+    </key>
+    <key name="usage-display" type="s">
+      <default>'used'</default>
+      <summary>Usage value display</summary>
+      <description>Whether to display used or remaining percentages</description>
+    </key>
+    <key name="icon-style" type="s">
+      <default>'color'</default>
+      <summary>Icon style</summary>
+      <description>Icon style: 'color' for the original colored icon, 'monochrome' for a desaturated monochrome icon</description>
+    </key>
+    <key name="show-icon" type="b">
+      <default>true</default>
+      <summary>Show icon</summary>
+      <description>Whether to show the provider icon in the top bar</description>
+    </key>
+    <key name="show-additional-limits" type="b">
+      <default>true</default>
+      <summary>Show additional limits</summary>
+      <description>Whether to show model-specific rate limits (e.g. GPT-5.3-Codex-Spark) in the menu</description>
+    </key>
+    <key name="proxy-url" type="s">
+      <default>''</default>
+      <summary>Proxy URL</summary>
+      <description>HTTP proxy URL (e.g., http://localhost:11809). Leave empty to use no proxy.</description>
+    </key>
+    <key name="provider-codex-enabled" type="b">
+      <default>true</default>
+      <summary>Codex provider enabled</summary>
+      <description>Whether to monitor Codex (ChatGPT backend usage via the local Codex CLI session)</description>
+    </key>
+    <key name="provider-antigravity-enabled" type="b">
+      <default>true</default>
+      <summary>Antigravity provider enabled</summary>
+      <description>Whether to monitor Google Antigravity via the agy CLI usage report</description>
+    </key>
+    <key name="provider-copilot-enabled" type="b">
+      <default>true</default>
+      <summary>Copilot provider enabled</summary>
+      <description>Whether to monitor GitHub Copilot quota via the GitHub CLI session</description>
+    </key>
+    <key name="provider-mistral-enabled" type="b">
+      <default>true</default>
+      <summary>Mistral provider enabled</summary>
+      <description>Whether to show Mistral (Firefox session fetch or manual monthly entry)</description>
+    </key>
+    <key name="panel-provider" type="s">
+      <default>'codex'</default>
+      <summary>Panel provider</summary>
+      <description>Which provider the panel percentage reflects: 'codex', 'antigravity', 'copilot' or 'mistral'</description>
+    </key>
+    <key name="mistral-manual-enabled" type="b">
+      <default>false</default>
+      <summary>Mistral manual entry enabled</summary>
+      <description>Whether to show the manually entered Mistral monthly allowances</description>
+    </key>
+    <key name="mistral-api-used" type="d">
+      <default>0.0</default>
+      <summary>Mistral API/Studio used</summary>
+      <description>Manually entered used amount of the included monthly API/Studio allowance, in EUR</description>
+    </key>
+    <key name="mistral-api-total" type="d">
+      <default>0.0</default>
+      <summary>Mistral API/Studio included</summary>
+      <description>Manually entered total of the included monthly API/Studio allowance, in EUR</description>
+    </key>
+    <key name="mistral-vibe-used" type="d">
+      <default>0.0</default>
+      <summary>Mistral Vibe Code used</summary>
+      <description>Manually entered used amount of the included monthly Vibe Code allowance, in EUR</description>
+    </key>
+    <key name="mistral-vibe-total" type="d">
+      <default>0.0</default>
+      <summary>Mistral Vibe Code included</summary>
+      <description>Manually entered total of the included monthly Vibe Code allowance, in EUR</description>
+    </key>
+    <key name="mistral-manual-updated-at" type="s">
+      <default>''</default>
+      <summary>Mistral manual entry timestamp</summary>
+      <description>When the manual Mistral amounts were last edited (ISO 8601)</description>
+    </key>
+    <key name="mistral-firefox-enabled" type="b">
+      <default>false</default>
+      <summary>Mistral Firefox session fetch</summary>
+      <description>Opt-in: read the admin.mistral.ai session cookie from the Firefox profile to fetch the subscription page once per refresh. The cookie is used in memory only and never stored. Requires being signed in to admin.mistral.ai in Firefox</description>
+    </key>
+  </schema>
+</schemalist>
