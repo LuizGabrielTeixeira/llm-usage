@@ -3,7 +3,7 @@
 set -euo pipefail
 
 repo_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-target_dir="$HOME/.local/share/gnome-shell/extensions/codex-usage@kevinpita.dev"
+target_dir="$HOME/.local/share/gnome-shell/extensions/llm-usage@LuizGabrielTeixeira"
 
 if [ "$repo_dir" = "$target_dir" ]; then
 	echo "Refusing to deploy from the installed extension directory"
