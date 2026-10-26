@@ -8,10 +8,6 @@ Click the panel indicator for the full breakdown, scroll the mouse wheel over it
 
 ---
 
-<p align="center">
-  <img src="icons/llm-usage.png" alt="LLM Usage" width="220">
-</p>
-
 ## Features
 
 - Panel percentage + progress bar + ring for the selected provider
@@ -109,6 +105,40 @@ gjs -m tools/validate-sources.js           # real one-shot fetch of all enabled 
 ## Icons
 
 Place `icons/<provider>.svg` or `icons/<provider>.png` (`codex`, `antigravity`, `copilot`, `mistral`) to override the panel icon per provider — there is no extension-level fallback, so a provider without an icon simply shows no icon. Transparent PNG at 32px or a normal SVG works best; see `icons/README.md`.
+
+## Showcase
+
+Scroll the mouse wheel over the panel indicator to switch providers:
+
+<p align="center">
+  <img src="icons/content/scroll.gif" alt="Mouse-wheel cycling between providers on the GNOME top panel" width="642">
+</p>
+
+Click the indicator for the full breakdown — one menu per provider — or pick one from the **Provider** submenu:
+
+<table>
+  <tr>
+    <td align="center"><img src="icons/content/codex.png" alt="Codex menu" width="280"></td>
+    <td align="center"><img src="icons/content/antigravity.png" alt="Antigravity menu" width="280"></td>
+    <td align="center"><img src="icons/content/copilot.png" alt="Copilot menu" width="280"></td>
+  </tr>
+  <tr>
+    <td align="center"><b>Codex</b></td>
+    <td align="center"><b>Antigravity</b></td>
+    <td align="center"><b>Copilot</b></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="icons/content/mistral.png" alt="Mistral menu" width="280"></td>
+    <td align="center"><img src="icons/content/provider-selection.png" alt="Provider submenu with a checkmark on the active provider" width="280"></td>
+    <td align="center"><img src="icons/llm-usage.png" alt="LLM Usage icon" width="220"></td>
+  </tr>
+  <tr>
+    <td align="center"><b>Mistral</b></td>
+    <td align="center"><b>Provider submenu</b></td>
+    <td align="center"><b>Icon</b></td>
+  </tr>
+</table>
+
 
 ## Credits & license
 

@@ -34,6 +34,10 @@ is showing.
 
 ## Notes
 
+- `content/` in this directory holds the screenshots and demo media shown
+  in the repository README only. The extension never reads it — provider
+  icons are looked up directly in `icons/` (`icons/<provider>.svg|png`),
+  never in subdirectories, so media files can't collide with panel icons.
 - `llm-usage.png` in this directory is the repository/README logo only —
   the extension does not read it.
 - Current files: `codex.svg` and `copilot.svg` are all-white versions
