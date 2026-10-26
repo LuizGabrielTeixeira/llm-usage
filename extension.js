@@ -20,6 +20,7 @@ import {
     expiresIn,
     usedPercent,
     displayPercent,
+    snapFullPercent,
     selectPanelWindow,
     snapshot,
 } from './lib/contract.js';
@@ -70,35 +71,28 @@ class Meter {
         this._track.add_child(this._fill);
 
         this._caption = new St.Label({text: '', style_class: 'codex-caption'});
-        this._note = new St.Label({text: '', style_class: 'codex-note'});
-        wrapLabel(this._note);
 
         this.root.add_child(row);
         this.root.add_child(this._track);
         this.root.add_child(this._caption);
-        this.root.add_child(this._note);
     }
 
-    setValue(util, caption, colorUtil = util, displayValue = util, displaySuffix = 'used', note = null) {
-        const clamped = Math.max(0, Math.min(100, util));
+    setValue(util, caption, colorUtil = util, displayValue = util, displaySuffix = 'used') {
+        const clamped = snapFullPercent(util);
         this._pct.text = `${displayValue.toFixed(1)}% ${displaySuffix}`;
         this._fill.set_width(Math.round((clamped / 100) * TRACK_WIDTH));
         this._fill.style_class = `codex-fill ${severity(colorUtil)}`;
         this._caption.text = caption ?? '';
         this._caption.visible = !!caption;
-        this._note.text = note?.text ?? '';
-        this._note.visible = !!note?.text;
     }
 
-    setAmount(displayText, util, colorUtil = util, caption = null, note = null) {
-        const clamped = Math.max(0, Math.min(100, util));
+    setAmount(displayText, util, colorUtil = util, caption = null) {
+        const clamped = snapFullPercent(util);
         this._pct.text = displayText;
         this._fill.set_width(Math.round((clamped / 100) * TRACK_WIDTH));
         this._fill.style_class = `codex-fill ${severity(colorUtil)}`;
         this._caption.text = caption ?? '';
         this._caption.visible = !!caption;
-        this._note.text = note?.text ?? '';
-        this._note.visible = !!note?.text;
     }
 
     setMuted(detail = '-') {
@@ -106,7 +100,6 @@ class Meter {
         this._fill.set_width(0);
         this._fill.style_class = 'codex-fill';
         this._caption.visible = false;
-        this._note.visible = false;
     }
 }
 
@@ -123,7 +116,7 @@ const Ring = GObject.registerClass(
         }
 
         setValue(util) {
-            this._util = Math.max(0, Math.min(100, util));
+            this._util = snapFullPercent(util);
             this.queue_repaint();
         }
 
@@ -170,8 +163,7 @@ class PanelBar {
     }
 
     setValue(util) {
-        const clamped = Math.max(0, Math.min(100, util));
-        this._fill.set_width(Math.round((clamped / 100) * PANEL_BAR_WIDTH));
+        this._fill.set_width(Math.round((snapFullPercent(util) / 100) * PANEL_BAR_WIDTH));
     }
 
     setUnknown() {
@@ -623,21 +615,17 @@ const UsageIndicator = GObject.registerClass(
             const caption = win.resetsAt ? relativeReset(win.resetsAt)
                 : (util > 0 ? '' : 'not used yet');
 
-            let note = null;
-            if (win.note)
-                note = {text: win.note};
-
             const reqs = win.requests;
             const showRequests = win.unit !== 'currency' && reqs && reqs.entitlement > 0;
 
             if (win.unit === 'currency' && win.totalAmount > 0) {
                 meter.setAmount(`\u20AC${(win.usedAmount ?? 0).toFixed(2)} / \u20AC${win.totalAmount.toFixed(2)}`,
-                    util, util, caption, note);
+                    util, util, caption);
             } else if (showRequests) {
                 meter.setAmount(`${reqs.used ?? 0} / ${reqs.entitlement} requests`,
-                    util, util, caption, note);
+                    util, util, caption);
             } else {
-                meter.setValue(util, caption, util, display, displaySuffix, note);
+                meter.setValue(util, caption, util, display, displaySuffix);
             }
         }
 

@@ -335,5 +335,36 @@ class CopilotRequestsDisplayTests(unittest.TestCase):
         self.assertIn("${Math.round(display)}%`", self.source)
 
 
+class BarFullnessTests(unittest.TestCase):
+    """A "100%" reading must render a completely full bar everywhere.
+    The panel text rounds to an integer, so ~99.5%+ reads "100%" there;
+    the panel bar (50px) rounds to full, but the menu bar (300px) used to
+    show a visible 1-3px gap at the same value (user report 2026-10-26)."""
+
+    def setUp(self):
+        self.source = (ROOT / 'extension.js').read_text()
+
+    def test_bars_render_through_snap_helper(self):
+        # Meter (setValue + setAmount), PanelBar and Ring all snap.
+        self.assertGreaterEqual(self.source.count('snapFullPercent('), 4)
+
+    def test_meter_clamps_via_snap_helper(self):
+        self.assertNotIn('Math.max(0, Math.min(100, util))', self.source,
+                         'renderers must clamp through snapFullPercent')
+
+
+class MenuCleanlinessTests(unittest.TestCase):
+    """The Antigravity CLI describes buckets in prose ("You have used some
+    of your weekly limit.") - text beyond the usage numbers. That prose must
+    not be surfaced in the menu (user report 2026-10-26)."""
+
+    def setUp(self):
+        self.source = (ROOT / 'extension.js').read_text()
+
+    def test_note_label_removed(self):
+        self.assertNotIn('codex-note', self.source)
+        self.assertNotIn('win.note', self.source)
+
+
 if __name__ == '__main__':
     unittest.main()

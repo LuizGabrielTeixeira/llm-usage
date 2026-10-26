@@ -13,6 +13,7 @@ import {
     severity,
     humanDuration,
     displayPercent,
+    snapFullPercent,
     parseMaybeDate,
     selectPanelWindow,
     normalizeCodex,
@@ -59,6 +60,14 @@ check('humanDuration one day plus', humanDuration(90000) === '1d 1h');
 
 check('displayPercent remaining', displayPercent(25, 'remaining') === 75);
 check('displayPercent used', displayPercent(25, 'used') === 25);
+
+check('snapFullPercent proportional below threshold',
+    snapFullPercent(99.49) === 99.49 && snapFullPercent(42.5) === 42.5);
+check('snapFullPercent full when panel reads 100',
+    snapFullPercent(99.5) === 100 && snapFullPercent(99.9) === 100);
+check('snapFullPercent clamps and passes exact values',
+    snapFullPercent(100) === 100 && snapFullPercent(120) === 100 &&
+    snapFullPercent(0) === 0 && snapFullPercent(-3) === 0);
 
 check('parseMaybeDate zero is null', parseMaybeDate(0) === null);
 check('parseMaybeDate epoch seconds',
@@ -197,7 +206,7 @@ check('agy 5h period', agySnap.windows[1].periodSeconds === FIVE_HOUR_SECONDS);
 check('agy unknown window period null', agySnap.windows[3].periodSeconds === null);
 check('agy scope passthrough', agySnap.windows[0].scope === 'Gemini Models');
 check('agy reset passthrough', agySnap.windows[0].resetsAt === '2026-10-26T20:15:11Z');
-check('agy note prose', agySnap.windows[0].note === 'You have used some of your weekly limit.');
+check('agy description prose dropped', agySnap.windows[0].note === null);
 check('agy second group used ~12.9%', approx(agySnap.windows[2].usedPercent, 12.86, 0.01));
 check('agy name has scope and label', agySnap.windows[2].name.includes('Claude and GPT models'));
 check('agy full remaining is 0 used', agySnap.windows[1].usedPercent === 0);

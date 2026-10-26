@@ -10,7 +10,7 @@ class TextStyleTests(unittest.TestCase):
             '.codex-panel-pct', '.codex-title',
             '.codex-subtitle', '.codex-section-label',
             '.codex-meter-name', '.codex-meter-pct', '.codex-caption',
-            '.codex-note', '.codex-reset-name', '.codex-reset-time',
+            '.codex-reset-name', '.codex-reset-time',
             '.codex-reset-empty', '.codex-error', '.codex-advice',
             '.codex-button', '.codex-updated', '.codex-footer-button',
         ]
@@ -26,7 +26,7 @@ class TextStyleTests(unittest.TestCase):
         stylesheet = Path('stylesheet.css').read_text()
         text_classes = [
             '.codex-subtitle', '.codex-section-label',
-            '.codex-caption', '.codex-note', '.codex-reset-time',
+            '.codex-caption', '.codex-reset-time',
             '.codex-reset-empty', '.codex-advice', '.codex-updated',
             '.codex-footer-button',
         ]
