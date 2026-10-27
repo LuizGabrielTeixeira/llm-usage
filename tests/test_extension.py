@@ -273,8 +273,13 @@ class ProviderIconTests(unittest.TestCase):
         source = (ROOT / 'extension.js').read_text()
         self.assertIn("'icons'", source)
         self.assertIn('svg', source)
-        self.assertNotIn('llm-usage.png', source)
         self.assertIn('_providerIconGicon', source)
+        # No extension-level fallback icon in the PANEL lookup; the reset
+        # notification tray source may use the llm-usage.png logo.
+        start = source.index('_providerIconGicon')
+        end = source.index('_resetTraySource', start)
+        panel_lookup = source[start:end]
+        self.assertNotIn('llm-usage.png', panel_lookup)
 
     def test_icons_readme_documents_formats(self):
         readme = (ROOT / 'icons' / 'README.md')
@@ -394,8 +399,16 @@ class ResetNotificationWiringTests(unittest.TestCase):
     def test_extension_wires_the_notifier(self):
         self.assertIn("from './lib/resetNotifications.js'", self.source)
         self.assertIn('new ResetNotifier(', self.source)
-        self.assertIn('Main.notify', self.source)
         self.assertIn('this._resetNotifier?.note(id, snap)', self.source)
+
+    def test_reset_notifications_stay_in_the_tray(self):
+        """Persistent notifications (user request 2026-10-27): reset banners
+        must NOT be transient like Main.notify() — they belong in the
+        message list/calendar until dismissed."""
+        self.assertIn('ui/messageTray.js', self.source)
+        self.assertIn('Main.messageTray.add(', self.source)
+        self.assertIn('addNotification(', self.source)
+        self.assertNotIn('Main.notify', self.source)
 
     def test_schema_and_prefs_expose_the_toggle(self):
         self.assertIn('notify-on-reset', self.schema)

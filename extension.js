@@ -9,6 +9,7 @@ import Cairo from 'cairo';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
 import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
+import * as MessageTray from 'resource:///org/gnome/shell/ui/messageTray.js';
 
 import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
 
@@ -250,7 +251,7 @@ const UsageIndicator = GObject.registerClass(
 
             this._resetNotifier = new ResetNotifier({
                 settings: this._settings,
-                notify: (title, body) => Main.notify(title, body),
+                notify: (title, body, providerId) => this._notifyReset(title, body, providerId),
                 providerLabels: Object.fromEntries(
                     PROVIDERS.map(provider => [provider.id, provider.label])),
             });
@@ -710,6 +711,36 @@ const UsageIndicator = GObject.registerClass(
             return favorite
                 ? (this._iconGiconByProvider.get(favorite) ?? null)
                 : null;
+        }
+
+        _resetTraySource(providerId) {
+            // Own notification source (like an app), recreated after the
+            // tray destroys the previous one (getSystemSource pattern).
+            this._traySources ??= new Map();
+            if (this._traySources.has(providerId))
+                return this._traySources.get(providerId);
+            const source = new MessageTray.Source({
+                title: PROVIDER_BY_ID.get(providerId)?.label ?? providerId,
+                icon: this._providerIconGicon(providerId),
+            });
+            source.connect('destroy', () => {
+                if (this._traySources.get(providerId) === source)
+                    this._traySources.delete(providerId);
+            });
+            Main.messageTray.add(source);
+            this._traySources.set(providerId, source);
+            return source;
+        }
+
+        _notifyReset(title, body, providerId) {
+            // Persistent tray notification: the system notify helper is
+            // transient by design and vanishes when the banner hides; a
+            // dedicated non-transient notification also stays in the
+            // message list/calendar until dismissed (user request
+            // 2026-10-27).
+            const source = this._resetTraySource(providerId);
+            source.addNotification(
+                new MessageTray.Notification({source, title, body}));
         }
 
         _renderPanel() {

@@ -15,6 +15,7 @@ Click the panel indicator for the full breakdown, scroll the mouse wheel over it
 - Request counters where the plan is metered by requests (Copilot Premium Interactions: `4 / 200 requests`)
 - Euro-denominated monthly pools for Mistral (`€5.00 / €50.00`)
 - Reset countdowns per window
+- Local quota-reset notifications with each provider's icon, kept in the notification list until dismissed (including resets missed while offline)
 - Mouse-wheel cycling between providers (like GNOME workspace switching)
 - Provider submenu with checkmark on the active provider
 - Provider icons (drop your own in `icons/`)
@@ -130,12 +131,12 @@ Click the indicator for the full breakdown — one menu per provider — or pick
   <tr>
     <td align="center"><img src="icons/content/mistral.png" alt="Mistral menu" width="280"></td>
     <td align="center"><img src="icons/content/provider-selection.png" alt="Provider submenu with a checkmark on the active provider" width="280"></td>
-    <td align="center"><img src="icons/llm-usage.png" alt="LLM Usage icon" width="220"></td>
+    <td align="center"><img src="icons/content/notify.png" alt="Quota-reset notifications with provider icons in the GNOME notification list" width="280"></td>
   </tr>
   <tr>
     <td align="center"><b>Mistral</b></td>
     <td align="center"><b>Provider submenu</b></td>
-    <td align="center"><b>Icon</b></td>
+    <td align="center"><b>Reset notifications</b></td>
   </tr>
 </table>
 
