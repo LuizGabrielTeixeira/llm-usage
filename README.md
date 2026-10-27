@@ -10,7 +10,7 @@ Click the panel indicator for the full breakdown, scroll the mouse wheel over it
 
 ## Features
 
-- Panel percentage + progress bar + ring for the selected provider
+- Five panel display modes: ring only, ring + percentage, percentage only, progress bar only, or bar + percentage (with an optional provider icon)
 - Per-provider sections with every quota window (e.g. Antigravity shows all its quota groups and both the weekly and 5-hour windows)
 - Request counters where the plan is metered by requests (Copilot Premium Interactions: `4 / 200 requests`)
 - Euro-denominated monthly pools for Mistral (`€5.00 / €50.00`)

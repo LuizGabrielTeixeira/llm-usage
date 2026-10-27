@@ -361,7 +361,7 @@ const UsageIndicator = GObject.registerClass(
 
         _updateDisplayMode() {
             const mode = this._settings.get_string('display-mode');
-            this._ring.visible = mode === 'ring';
+            this._ring.visible = mode === 'ring' || mode === 'ring-only';
             this._panelBar.root.visible = mode === 'bar' || mode === 'both';
             this._label.visible = mode === 'text' || mode === 'both' || mode === 'ring';
         }

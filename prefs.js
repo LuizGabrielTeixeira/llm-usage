@@ -89,7 +89,7 @@ export default class CodexUsagePreferences extends ExtensionPreferences {
 
         const displayModeRow = new Adw.ComboRow({
             title: 'Display Mode',
-            subtitle: 'Show usage as a ring, text percentage, progress bar, or both',
+            subtitle: 'Show a ring or bar, a percentage, or combine them',
         });
 
         const displayModeModel = new Gtk.StringList();
@@ -97,18 +97,20 @@ export default class CodexUsagePreferences extends ExtensionPreferences {
         displayModeModel.append('Text (percentage)');
         displayModeModel.append('Progress Bar');
         displayModeModel.append('Bar + Percentage');
+        displayModeModel.append('Ring only');
         displayModeRow.set_model(displayModeModel);
 
         const currentMode = settings.get_string('display-mode');
         const modeIndex = currentMode === 'text' ? 1
             : currentMode === 'bar' ? 2
                 : currentMode === 'both' ? 3
-                    : 0;
+                    : currentMode === 'ring-only' ? 4
+                        : 0;
         displayModeRow.set_selected(modeIndex);
 
         displayModeRow.connect('notify::selected', () => {
             const selected = displayModeRow.get_selected();
-            const modes = ['ring', 'text', 'bar', 'both'];
+            const modes = ['ring', 'text', 'bar', 'both', 'ring-only'];
             settings.set_string('display-mode', modes[selected]);
         });
 
