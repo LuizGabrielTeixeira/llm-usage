@@ -71,5 +71,15 @@
       <summary>Mistral Firefox session fetch</summary>
       <description>Opt-in: read the admin.mistral.ai session cookie from the Firefox profile to fetch the subscription page once per refresh. The cookie is used in memory only and never stored. Requires being signed in to admin.mistral.ai in Firefox</description>
     </key>
+    <key name="notify-on-reset" type="b">
+      <default>true</default>
+      <summary>Notify on subscription reset</summary>
+      <description>Raise a desktop notification when a monitored subscription quota resets (weekly or monthly windows), including resets that happen while the extension is not running</description>
+    </key>
+    <key name="reset-notification-state" type="s">
+      <default>''</default>
+      <summary>Reset notification state</summary>
+      <description>Internal JSON map of last-seen reset instants and notification markers per target; managed by the extension</description>
+    </key>
   </schema>
 </schemalist>

@@ -29,6 +29,7 @@ import {AgySource} from './lib/agySource.js';
 import {CopilotSource} from './lib/copilotSource.js';
 import {MistralSource} from './lib/mistralSource.js';
 import {ProviderCoordinator} from './lib/coordinator.js';
+import {ResetNotifier} from './lib/resetNotifications.js';
 
 const PANEL_BAR_WIDTH = 50;
 const RING_SIZE = 18;
@@ -246,6 +247,13 @@ const UsageIndicator = GObject.registerClass(
             }, this);
 
             this.connect('scroll-event', this._onScroll.bind(this));
+
+            this._resetNotifier = new ResetNotifier({
+                settings: this._settings,
+                notify: (title, body) => Main.notify(title, body),
+                providerLabels: Object.fromEntries(
+                    PROVIDERS.map(provider => [provider.id, provider.label])),
+            });
 
             this._createSources();
             this._refreshAll();
@@ -758,6 +766,7 @@ const UsageIndicator = GObject.registerClass(
 
         _onSnapshot(id, snap) {
             this._snapshots.set(id, snap);
+            this._resetNotifier?.note(id, snap);
             this._checkedAt.set(id, {
                 time: GLib.DateTime.new_now_local(),
                 success: snap.status === STATUS.OK,

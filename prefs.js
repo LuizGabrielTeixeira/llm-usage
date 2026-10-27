@@ -210,6 +210,24 @@ export default class CodexUsagePreferences extends ExtensionPreferences {
         );
         menuGroup.add(additionalLimitsRow);
 
+        const notificationsGroup = new Adw.PreferencesGroup({
+            title: 'Notifications',
+            description: 'Desktop notifications on this PC only - no external services',
+        });
+        page.add(notificationsGroup);
+
+        const notifyResetRow = new Adw.SwitchRow({
+            title: 'Notify on Reset',
+            subtitle: 'Desktop notification when a weekly or monthly quota resets, including resets missed while you were away',
+        });
+        settings.bind(
+            'notify-on-reset',
+            notifyResetRow,
+            'active',
+            Gio.SettingsBindFlags.DEFAULT
+        );
+        notificationsGroup.add(notifyResetRow);
+
         const mistralGroup = new Adw.PreferencesGroup({
             title: 'Mistral',
             description: 'Mistral allowances are only visible in the Mistral console (browser session)',

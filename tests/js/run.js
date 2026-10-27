@@ -23,6 +23,12 @@ import {
     buildMistralWebSnapshot,
 } from '../../lib/contract.js';
 
+import {
+    scopeGroup,
+    targetsFromSnapshot,
+    computeResetEvents,
+} from '../../lib/resetNotifications.js';
+
 let passed = 0;
 let failed = 0;
 
@@ -287,6 +293,120 @@ check('mistral web monthly resetsAt', webSnap.windows[0].resetsAt === monthlyRes
 const webVibeOnly = buildMistralWebSnapshot({vibeUsed: 5.0, vibeTotal: 50.0});
 check('mistral web vibe-only single pool', webVibeOnly !== null && webVibeOnly.windows.length === 1);
 check('mistral web empty is null', buildMistralWebSnapshot({}) === null);
+
+/* ---------------- reset notifications ---------------- */
+
+// scopeGroup: target identity per (provider, scope-group).
+check('scopeGroup: null scope is null', scopeGroup('codex', null) === null);
+check('scopeGroup: empty scope is null', scopeGroup('codex', '') === null);
+check('scopeGroup: agy claude alias', scopeGroup('antigravity', 'Claude 4.5 Sonnet') === 'Claude/GPT models');
+check('scopeGroup: agy gpt alias', scopeGroup('antigravity', 'GPT-5.3 high') === 'Claude/GPT models');
+check('scopeGroup: agy unmapped passthrough', scopeGroup('antigravity', 'Gemini') === 'Gemini');
+check('scopeGroup: other provider passthrough', scopeGroup('codex', 'Weekly') === 'Weekly');
+
+const NOTIFICATION_NOW = Date.parse('2026-10-27T12:00:00.000Z');
+const isoIn = hours => new Date(NOTIFICATION_NOW + hours * 3600 * 1000).toISOString();
+
+// targetsFromSnapshot: windows -> notification targets.
+const codexTargets = targetsFromSnapshot('codex', {
+    status: STATUS.OK,
+    windows: [
+        {id: 'primary', name: '5-Hour', scope: null, periodSeconds: FIVE_HOUR_SECONDS, resetsAt: isoIn(2)},
+        {id: 'secondary', name: 'Weekly', scope: null, periodSeconds: SEVEN_DAY_SECONDS, resetsAt: isoIn(24 * 7)},
+    ],
+});
+check('targets: codex weekly only (5h excluded)', codexTargets.length === 1);
+check('targets: codex group null', codexTargets[0].group === null);
+check('targets: codex key', codexTargets[0].key === 'codex::');
+check('targets: codex names', codexTargets[0].names.length === 1 && codexTargets[0].names[0] === 'Weekly');
+
+const mistralTargets = targetsFromSnapshot('mistral', {
+    status: STATUS.OK,
+    windows: [
+        {id: 'api', name: 'API / Studio', scope: null, periodSeconds: null, resetsAt: isoIn(24 * 5)},
+        {id: 'vibe', name: 'Vibe Code', scope: null, periodSeconds: null, resetsAt: isoIn(24 * 5)},
+    ],
+});
+check('targets: mistral pools merged', mistralTargets.length === 1);
+check('targets: mistral both names', mistralTargets[0].names.length === 2);
+
+const agyTargets = targetsFromSnapshot('antigravity', {
+    status: STATUS.OK,
+    windows: [
+        {id: 'Gemini:weekly', name: 'Gemini weekly', scope: 'Gemini', periodSeconds: SEVEN_DAY_SECONDS, resetsAt: isoIn(24 * 6)},
+        {id: 'Argon:weekly', name: 'Argon weekly', scope: 'Argon', periodSeconds: SEVEN_DAY_SECONDS, resetsAt: isoIn(24 * 6)},
+        {id: 'Claude:weekly', name: 'Claude 4.5 weekly', scope: 'Claude 4.5 Sonnet', periodSeconds: SEVEN_DAY_SECONDS, resetsAt: isoIn(24 * 6)},
+        {id: 'GPT:weekly', name: 'GPT-5.3 weekly', scope: 'GPT-5.3 high', periodSeconds: SEVEN_DAY_SECONDS, resetsAt: isoIn(24 * 6)},
+        {id: 'Gemini:5h', name: 'Gemini 5h', scope: 'Gemini', periodSeconds: FIVE_HOUR_SECONDS, resetsAt: isoIn(3)},
+    ],
+});
+check('targets: agy three families', agyTargets.length === 3);
+const agyMerged = agyTargets.find(target => target.group === 'Claude/GPT models');
+check('targets: agy claude/gpt merged', agyMerged !== undefined && agyMerged.names.length === 2);
+check('targets: agy gemini present', agyTargets.some(target => target.group === 'Gemini'));
+check('targets: agy 5h window excluded', !agyTargets.some(target => target.names.includes('Gemini 5h')));
+
+check('targets: error snapshot ignored',
+    targetsFromSnapshot('codex', {status: STATUS.ERROR, windows: []}).length === 0);
+check('targets: null resetsAt ignored',
+    targetsFromSnapshot('codex', {
+        status: STATUS.OK,
+        windows: [{id: 'w', name: 'Weekly', scope: null, periodSeconds: SEVEN_DAY_SECONDS, resetsAt: null}],
+    }).length === 0);
+
+// computeResetEvents: pure transition logic (state mutated in place).
+const EVENT_T0 = NOTIFICATION_NOW - 48 * 3600 * 1000; // past
+const EVENT_T1 = NOTIFICATION_NOW + 24 * 3600 * 1000; // future
+const EVENT_T2 = NOTIFICATION_NOW + 72 * 3600 * 1000;
+const mkTarget = ms => ({
+    key: 'codex::',
+    providerId: 'codex',
+    group: null,
+    resetsAtMs: ms,
+    names: ['Weekly'],
+});
+
+let eventState = {};
+let events = computeResetEvents(eventState, [mkTarget(EVENT_T1)], NOTIFICATION_NOW);
+check('events: first-seen future baselines silently',
+    events.length === 0 && eventState['codex::'].resetsAt === EVENT_T1 && eventState['codex::'].notified === false);
+
+eventState = {};
+events = computeResetEvents(eventState, [mkTarget(EVENT_T0)], NOTIFICATION_NOW);
+check('events: first-seen past baselines silently',
+    events.length === 0 && eventState['codex::'].notified === true);
+
+eventState = {'codex::': {resetsAt: EVENT_T1, notified: false}};
+events = computeResetEvents(eventState, [mkTarget(EVENT_T1)], NOTIFICATION_NOW);
+check('events: future instant silent', events.length === 0);
+
+events = computeResetEvents(eventState, [mkTarget(EVENT_T1)], NOTIFICATION_NOW + 25 * 3600 * 1000);
+check('events: crossing notifies', events.length === 1 && events[0].missed === false);
+check('events: crossing marks notified', eventState['codex::'].notified === true);
+check('events: no duplicate on next poll',
+    computeResetEvents(eventState, [mkTarget(EVENT_T1)], NOTIFICATION_NOW + 26 * 3600 * 1000).length === 0);
+
+eventState = {'codex::': {resetsAt: EVENT_T0, notified: false}};
+events = computeResetEvents(eventState, [mkTarget(EVENT_T1)], NOTIFICATION_NOW);
+check('events: missed-while-away notifies',
+    events.length === 1 && events[0].missed === true && events[0].resetsAtMs === EVENT_T0);
+check('events: missed tracks new instant',
+    eventState['codex::'].resetsAt === EVENT_T1 && eventState['codex::'].notified === false);
+
+eventState = {'codex::': {resetsAt: EVENT_T0, notified: true}};
+events = computeResetEvents(eventState, [mkTarget(EVENT_T1)], NOTIFICATION_NOW);
+check('events: notified cycle rolls silently',
+    events.length === 0 && eventState['codex::'].resetsAt === EVENT_T1);
+
+eventState = {'codex::': {resetsAt: EVENT_T1, notified: false}};
+events = computeResetEvents(eventState, [mkTarget(EVENT_T2)], NOTIFICATION_NOW);
+check('events: moved-later before crossing silent',
+    events.length === 0 && eventState['codex::'].resetsAt === EVENT_T2 && eventState['codex::'].notified === false);
+
+eventState = {'codex::': {resetsAt: EVENT_T1, notified: false}};
+events = computeResetEvents(eventState, [mkTarget(EVENT_T0)], NOTIFICATION_NOW);
+check('events: moved-earlier silent',
+    events.length === 0 && eventState['codex::'].resetsAt === EVENT_T0 && eventState['codex::'].notified === true);
 
 /* ---------------- summary ---------------- */
 

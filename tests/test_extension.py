@@ -379,5 +379,32 @@ class MenuCleanlinessTests(unittest.TestCase):
         self.assertNotIn('win.note', self.source)
 
 
+class ResetNotificationWiringTests(unittest.TestCase):
+    """Desktop reset notifications (user request 2026-10-27: "notificação
+    aqui no pc apenas, quando ligar ou durante a utilização. por app e
+    subscrição que reseta. sem notificações externas pra já"). The feature
+    is a self-contained module plus hook points, revertable in one commit."""
+
+    def setUp(self):
+        self.source = (ROOT / 'extension.js').read_text()
+        self.prefs = (ROOT / 'prefs.js').read_text()
+        self.schema = (ROOT / 'schemas' /
+                       'org.gnome.shell.extensions.llm-usage.gschema.xml').read_text()
+
+    def test_extension_wires_the_notifier(self):
+        self.assertIn("from './lib/resetNotifications.js'", self.source)
+        self.assertIn('new ResetNotifier(', self.source)
+        self.assertIn('Main.notify', self.source)
+        self.assertIn('this._resetNotifier?.note(id, snap)', self.source)
+
+    def test_schema_and_prefs_expose_the_toggle(self):
+        self.assertIn('notify-on-reset', self.schema)
+        self.assertIn('reset-notification-state', self.schema)
+        self.assertIn("'notify-on-reset'", self.prefs)
+
+    def test_notifier_module_exists(self):
+        self.assertTrue((ROOT / 'lib' / 'resetNotifications.js').exists())
+
+
 if __name__ == '__main__':
     unittest.main()
