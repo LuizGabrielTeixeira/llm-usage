@@ -17,7 +17,7 @@ Click the panel indicator for the full breakdown, scroll the mouse wheel over it
 - Request counters where the plan is metered by requests (Copilot Premium Interactions: `4 / 200 requests`)
 - Euro-denominated monthly pools for Mistral (`€5.00 / €50.00`)
 - Reset countdowns per window
-- Local quota-reset notifications with each provider's icon, kept in the notification list until dismissed (including resets missed while offline)
+- Local quota-reset notifications with each provider's icon, kept in the notification list until dismissed (including resets missed while offline). Early renewals are inferred when usage drops and the next reset advances; a date correction alone stays silent. First observations only establish a baseline.
 - Mouse-wheel cycling between providers (like GNOME workspace switching)
 - Provider submenu with checkmark on the active provider
 - Provider icons (drop your own in `icons/`)
@@ -51,7 +51,7 @@ Supported for the automatic fetch: native/Flatpak/Snap Firefox, Zen and LibreWol
 
 - **No credentials are ever stored.** Codex and Copilot tokens are read from the CLIs you already trust (`~/.codex/auth.json`, `gh auth token`) and used in memory for a single request.
 - **The Mistral Firefox cookie** lives in memory for one request and is then discarded; the temporary copy of `cookies.sqlite` is `chmod 0600`, in a private temp dir, deleted immediately after reading (see above).
-- **GSettings contains no secrets** — only UI preferences and opt-in toggles. No amounts are stored at all.
+- **GSettings contains no secrets** — UI preferences, opt-in toggles, and reset-notification baselines (reset dates, percentages and delivery markers). No monetary or request amounts are stored.
 - Nothing is telemetry'd, uploaded, or shared. The extension makes no requests other than the usage endpoints listed in the table above.
 - Errors are honest and actionable: signed out, quota page changed, provider disabled — each with advice on how to fix it.
 

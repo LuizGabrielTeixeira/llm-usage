@@ -4,6 +4,7 @@ Run from the repository root: python3 -m unittest discover -s tests -v
 """
 
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -130,6 +131,47 @@ class ModuleResolutionTests(unittest.TestCase):
 
 
 class JsContractTests(unittest.TestCase):
+    def test_reset_notifier_across_process_restarts(self):
+        binary = shutil.which('gjs')
+        compiler = shutil.which('glib-compile-schemas')
+        if binary is None or compiler is None:
+            self.skipTest('gjs and glib-compile-schemas required')
+        with tempfile.TemporaryDirectory() as target:
+            subprocess.run(
+                [compiler, '--strict', '--targetdir', target, str(SCHEMA_PATH.parent)],
+                check=True, capture_output=True, text=True, timeout=30,
+            )
+            env = {**os.environ, 'GSETTINGS_SCHEMA_DIR': target,
+                   'GSETTINGS_BACKEND': 'keyfile', 'XDG_CONFIG_HOME': target}
+            for phase in ('baseline', 'wake', 'verify'):
+                with self.subTest(phase=phase):
+                    result = subprocess.run(
+                        [binary, '-m', 'tests/js/reset-notifier.js', phase],
+                        cwd=ROOT, capture_output=True, text=True, timeout=60, env=env,
+                    )
+                    self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assertTrue((Path(target) / 'glib-2.0/settings/keyfile').is_file())
+
+    def test_reset_notifier_with_persisted_settings(self):
+        binary = shutil.which('gjs')
+        compiler = shutil.which('glib-compile-schemas')
+        if binary is None or compiler is None:
+            self.skipTest('gjs and glib-compile-schemas required')
+        with tempfile.TemporaryDirectory() as target:
+            subprocess.run(
+                [compiler, '--strict', '--targetdir', target, str(SCHEMA_PATH.parent)],
+                check=True, capture_output=True, text=True, timeout=30,
+            )
+            result = subprocess.run(
+                [binary, '-m', 'tests/js/reset-notifier.js'],
+                cwd=ROOT, capture_output=True, text=True, timeout=60,
+                env={**os.environ, 'GSETTINGS_SCHEMA_DIR': target,
+                     'GSETTINGS_BACKEND': 'memory'},
+            )
+        combined = result.stdout + result.stderr
+        self.assertEqual(result.returncode, 0, f'reset notifier tests failed:\n{combined}')
+        self.assertIn('RESET-NOTIFIER-TESTS:', combined)
+
     def test_contract_suite_passes(self):
         binary = shutil.which('gjs')
         if binary is None:

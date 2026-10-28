@@ -79,7 +79,7 @@
     <key name="reset-notification-state" type="s">
       <default>''</default>
       <summary>Reset notification state</summary>
-      <description>Internal JSON map of last-seen reset instants and notification markers per target; managed by the extension</description>
+      <description>Internal JSON map of last-seen reset instants, per-window usage percentages and notification markers per target; managed by the extension. No monetary or request amounts are stored</description>
     </key>
   </schema>
 </schemalist>

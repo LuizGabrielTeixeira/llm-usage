@@ -120,6 +120,12 @@ check('selectPanelWindow primary stays literal first window',
 
 /* ---------------- codex ---------------- */
 
+check('codex unknown usage stays unknown, not a synthetic reset to zero',
+    normalizeCodex({rate_limit: {
+        primary_window: {used_percent: null},
+        secondary_window: {used_percent: NaN},
+    }}).windows.every(win => win.usedPercent === null));
+
 const codexFixture = {
     rate_limit: {
         primary_window: {used_percent: 42.5, reset_at: 1790000000},
