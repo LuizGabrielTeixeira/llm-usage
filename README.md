@@ -1,5 +1,7 @@
 # llm-usage
 
+[![XERJ Corpus Hub contributor](https://hub.xerj.org/contributors/LuizGabrielTeixeira/badge.svg)](https://hub.xerj.org/contributors/LuizGabrielTeixeira)
+
 A GNOME Shell extension that shows your AI subscription usage in the top panel — one place to watch quotas from **OpenAI Codex**, **Google Antigravity**, **GitHub Copilot** and **Mistral** (including the student plans).
 
 Click the panel indicator for the full breakdown, scroll the mouse wheel over it to switch providers, or pick one from the **Provider** submenu.
