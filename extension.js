@@ -47,7 +47,7 @@ const PROVIDER_BY_ID = new Map(PROVIDERS.map(provider => [provider.id, provider]
 const PROVIDER_USAGE_URLS = {
     codex: 'https://chatgpt.com/#settings/Usage',
     copilot: 'https://github.com/settings/copilot/features',
-    mistral: 'https://console.mistral.ai/usage',
+    mistral: 'https://admin.mistral.ai/subscription',
 };
 
 function wrapLabel(label) {
