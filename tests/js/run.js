@@ -21,6 +21,7 @@ import {
     normalizeCopilot,
     monthlyResetIso,
     buildMistralWebSnapshot,
+    normalizeClaude,
 } from '../../lib/contract.js';
 
 import {
@@ -300,6 +301,109 @@ const webVibeOnly = buildMistralWebSnapshot({vibeUsed: 5.0, vibeTotal: 50.0});
 check('mistral web vibe-only single pool', webVibeOnly !== null && webVibeOnly.windows.length === 1);
 check('mistral web empty is null', buildMistralWebSnapshot({}) === null);
 
+/* ---------------- claude ---------------- */
+
+const claudeFixture = {
+    five_hour: {utilization: 18.5, resets_at: '2026-06-01T15:00:00Z'},
+    seven_day: {utilization: 64, resets_at: '2026-06-06T00:00:00Z'},
+    seven_day_sonnet: {utilization: 30, resets_at: '2026-06-06T00:00:00Z'},
+    seven_day_opus: {utilization: 10, resets_at: '2026-06-07T00:00:00Z'},
+    seven_day_custom_scope: {utilization: 5, resets_at: '2026-06-08T00:00:00Z'},
+    seven_day_breakdown: {utilization: 99, resets_at: '2026-06-06T00:00:00Z'},
+    extra_usage: {
+        is_enabled: true,
+        utilization: 37.5,
+        monthly_limit: 5000,
+        used_credits: 1875,
+        resets_at: '2026-07-01T00:00:00Z',
+    },
+};
+
+const claudeSnap = normalizeClaude(claudeFixture, '2026-06-01T12:00:00Z');
+check('claude status ok', claudeSnap.status === STATUS.OK && claudeSnap.providerId === 'claude');
+check('claude capturedAt passthrough', claudeSnap.capturedAt === '2026-06-01T12:00:00.000Z');
+check('claude six normalized windows (skips seven_day_breakdown)',
+    claudeSnap.windows.length === 6 && !claudeSnap.windows.some(w => w.id === 'seven_day_breakdown'));
+
+const claude5h = claudeSnap.windows.find(w => w.id === 'five_hour');
+check('claude 5h metadata & percent',
+    claude5h?.name === '5-Hour' &&
+    claude5h.periodSeconds === FIVE_HOUR_SECONDS &&
+    claude5h.usedPercent === 18.5 &&
+    claude5h.additional === false &&
+    claude5h.scope === null &&
+    claude5h.resetsAt === '2026-06-01T15:00:00.000Z');
+
+const claudeWeekly = claudeSnap.windows.find(w => w.id === 'seven_day');
+check('claude weekly metadata',
+    claudeWeekly?.name === 'Weekly' &&
+    claudeWeekly.periodSeconds === SEVEN_DAY_SECONDS &&
+    claudeWeekly.usedPercent === 64 &&
+    claudeWeekly.additional === false &&
+    claudeWeekly.scope === null);
+
+const claudeSonnet = claudeSnap.windows.find(w => w.id === 'seven_day_sonnet');
+check('claude sonnet additional scoped weekly',
+    claudeSonnet?.name === 'Sonnet Weekly' &&
+    claudeSonnet.scope === 'Sonnet' &&
+    claudeSonnet.additional === true &&
+    claudeSonnet.periodSeconds === SEVEN_DAY_SECONDS);
+
+const claudeOpus = claudeSnap.windows.find(w => w.id === 'seven_day_opus');
+check('claude opus additional scoped weekly',
+    claudeOpus?.name === 'Opus Weekly' &&
+    claudeOpus.scope === 'Opus' &&
+    claudeOpus.additional === true);
+
+const claudeCustom = claudeSnap.windows.find(w => w.id === 'seven_day_custom_scope');
+check('claude unknown seven_day_* falls back cleanly',
+    claudeCustom?.name === 'Custom Scope Weekly' &&
+    claudeCustom.scope === 'Custom Scope' &&
+    claudeCustom.additional === true);
+
+const claudeExtra = claudeSnap.windows.find(w => w.id === 'extra_usage');
+check('claude extra_usage normalized without totalAmount',
+    claudeExtra?.name === 'Extra Usage' &&
+    claudeExtra.periodSeconds === null &&
+    claudeExtra.scope === 'Extra Usage' &&
+    claudeExtra.additional === false &&
+    claudeExtra.usedPercent === 37.5 &&
+    claudeExtra.totalAmount === undefined &&
+    claudeExtra.resetsAt === '2026-07-01T00:00:00.000Z');
+
+check('selectPanelWindow largest keeps 5-Hour for claude',
+    selectPanelWindow(claudeSnap.windows, 'largest')?.id === 'five_hour');
+check('selectPanelWindow max picks highest claude window',
+    selectPanelWindow(claudeSnap.windows, 'max')?.id === 'seven_day');
+
+const claudeExtraFallback = normalizeClaude({
+    extra_usage: {
+        is_enabled: true,
+        utilization: null,
+        monthly_limit: 2000,
+        used_credits: 500,
+        resets_at: null,
+    },
+});
+check('claude extra_usage computes percent fallback from credits/limit',
+    claudeExtraFallback.windows.length === 1 &&
+    claudeExtraFallback.windows[0].id === 'extra_usage' &&
+    claudeExtraFallback.windows[0].usedPercent === 25 &&
+    claudeExtraFallback.windows[0].resetsAt === null);
+
+const claudeExtraDisabled = normalizeClaude({
+    five_hour: {utilization: 12, resets_at: null},
+    extra_usage: {is_enabled: false, utilization: 80},
+});
+check('claude disabled extra_usage omitted',
+    claudeExtraDisabled.windows.length === 1 && claudeExtraDisabled.windows[0].id === 'five_hour');
+
+check('claude invalid/empty payloads throw',
+    throws(() => normalizeClaude(null)) &&
+    throws(() => normalizeClaude([])) &&
+    throws(() => normalizeClaude({})) &&
+    throws(() => normalizeClaude({five_hour: null, seven_day: null, limits: []})));
+
 /* ---------------- reset notifications ---------------- */
 
 // scopeGroup: target identity per (provider, scope-group).
@@ -359,6 +463,15 @@ check('targets: null resetsAt ignored',
         status: STATUS.OK,
         windows: [{id: 'w', name: 'Weekly', scope: null, periodSeconds: SEVEN_DAY_SECONDS, resetsAt: null}],
     }).length === 0);
+
+const claudeTargets = targetsFromSnapshot('claude', claudeSnap);
+check('targets: claude 5h excluded',
+    !claudeTargets.some(target => target.names.includes('5-Hour')));
+check('targets: claude primary weekly uses null group',
+    claudeTargets.some(target => target.group === null && target.names.includes('Weekly')));
+check('targets: claude scoped windows and extra_usage kept separate',
+    ['Sonnet', 'Opus', 'Custom Scope', 'Extra Usage'].every(
+        group => claudeTargets.some(target => target.group === group)));
 
 // computeResetEvents: pure transition logic (state mutated in place).
 const EVENT_T0 = NOTIFICATION_NOW - 48 * 3600 * 1000; // past

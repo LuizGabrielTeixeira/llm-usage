@@ -19,6 +19,7 @@ import {CodexSource} from '../lib/codexSource.js';
 import {AgySource} from '../lib/agySource.js';
 import {CopilotSource} from '../lib/copilotSource.js';
 import {MistralSource} from '../lib/mistralSource.js';
+import {ClaudeSource} from '../lib/claudeSource.js';
 
 function describeSnapshot(snap) {
     const lines = [`  status: ${snap.status}`];
@@ -33,7 +34,7 @@ function describeSnapshot(snap) {
         else
             parts.push(`${win.usedPercent.toFixed(1)}% used`);
         if (win.unit === 'currency' && win.totalAmount > 0)
-            parts.push(`EUR ${(win.usedAmount ?? 0).toFixed(2)} / ${win.totalAmount.toFixed(2)}`);
+            parts.push(`${win.currency ?? 'EUR'} ${(win.usedAmount ?? 0).toFixed(2)} / ${win.totalAmount.toFixed(2)}`);
         if (win.requests?.entitlement > 0)
             parts.push(`${win.requests.used}/${win.requests.entitlement} requests`);
         if (win.resetsAt)
@@ -47,7 +48,7 @@ const loop = new GLib.MainLoop(null, false);
 
 const settingsStub = {
     get_boolean(key) {
-        return key === 'mistral-firefox-enabled';
+        return key === 'mistral-firefox-enabled' || key === 'claude-firefox-enabled';
     },
     get_double(_key) {
         return 0;
@@ -62,6 +63,7 @@ const sources = [
     {id: 'antigravity', source: new AgySource()},
     {id: 'copilot', source: new CopilotSource({proxyUrl: ''})},
     {id: 'mistral', source: new MistralSource({settings: settingsStub, extensionPath: '.'})},
+    {id: 'claude', source: new ClaudeSource({proxyUrl: '', settings: settingsStub, extensionPath: '.'})},
 ];
 
 const pending = new Set(sources.map(({id}) => id));

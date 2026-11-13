@@ -29,6 +29,7 @@ import {CodexSource} from './lib/codexSource.js';
 import {AgySource} from './lib/agySource.js';
 import {CopilotSource} from './lib/copilotSource.js';
 import {MistralSource} from './lib/mistralSource.js';
+import {ClaudeSource} from './lib/claudeSource.js';
 import {ProviderCoordinator} from './lib/coordinator.js';
 import {ResetNotifier} from './lib/resetNotifications.js';
 
@@ -41,6 +42,7 @@ const PROVIDERS = [
     {id: 'antigravity', label: 'Antigravity'},
     {id: 'copilot', label: 'Copilot'},
     {id: 'mistral', label: 'Mistral'},
+    {id: 'claude', label: 'Claude'},
 ];
 const PROVIDER_BY_ID = new Map(PROVIDERS.map(provider => [provider.id, provider]));
 
@@ -48,7 +50,20 @@ const PROVIDER_USAGE_URLS = {
     codex: 'https://chatgpt.com/#settings/Usage',
     copilot: 'https://github.com/settings/copilot/features',
     mistral: 'https://admin.mistral.ai/subscription',
+    claude: 'https://claude.ai/settings/usage',
 };
+
+const CURRENCY_SYMBOLS = {
+    EUR: '\u20AC',
+    USD: '$',
+    GBP: '\u00A3',
+};
+
+function formatCurrency(amount, currency) {
+    const formatted = (amount ?? 0).toFixed(2);
+    const symbol = CURRENCY_SYMBOLS[currency];
+    return symbol ? `${symbol}${formatted}` : (currency ? `${currency} ${formatted}` : formatted);
+}
 
 function wrapLabel(label) {
     label.clutter_text.line_wrap = true;
@@ -292,6 +307,8 @@ const UsageIndicator = GObject.registerClass(
                 this._updateFooterTime();
             } else if (key.startsWith('mistral-')) {
                 this._coordinator?.refreshProvider('mistral');
+            } else if (key.startsWith('claude-')) {
+                this._coordinator?.refreshProvider('claude');
             }
         }
 
@@ -574,7 +591,10 @@ const UsageIndicator = GObject.registerClass(
                 return;
             }
 
+            const showAdditional = this._settings.get_boolean('show-additional-limits');
             for (const win of snap.windows) {
+                if (win.additional && !showAdditional)
+                    continue;
                 const meter = new Meter(win.name);
                 this._applyWindow(meter, win);
                 this._limitsBox.add_child(meter.root);
@@ -642,7 +662,8 @@ const UsageIndicator = GObject.registerClass(
             const showRequests = win.unit !== 'currency' && reqs && reqs.entitlement > 0;
 
             if (win.unit === 'currency' && win.totalAmount > 0) {
-                meter.setAmount(`\u20AC${(win.usedAmount ?? 0).toFixed(2)} / \u20AC${win.totalAmount.toFixed(2)}`,
+                meter.setAmount(
+                    `${formatCurrency(win.usedAmount, win.currency)} / ${formatCurrency(win.totalAmount, win.currency)}`,
                     util, util, caption);
             } else if (showRequests) {
                 meter.setAmount(`${reqs.used ?? 0} / ${reqs.entitlement} requests`,
@@ -817,6 +838,11 @@ const UsageIndicator = GObject.registerClass(
                 antigravity: new AgySource(),
                 copilot: new CopilotSource({proxyUrl}),
                 mistral: new MistralSource({settings: this._settings, extensionPath: this._extensionPath}),
+                claude: new ClaudeSource({
+                    proxyUrl,
+                    settings: this._settings,
+                    extensionPath: this._extensionPath,
+                }),
             };
 
             this._coordinator = new ProviderCoordinator({

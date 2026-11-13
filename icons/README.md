@@ -9,6 +9,7 @@ can have its own icon file in this directory:
 | Antigravity | `antigravity.svg` or `antigravity.png` |
 | Copilot     | `copilot.svg` or `copilot.png`   |
 | Mistral     | `mistral.svg` or `mistral.png`   |
+| Claude      | `claude.svg` or `claude.png`     |
 
 If no file exists for a provider, the panel simply shows no icon for that
 provider (the icon slot is hidden — everything else keeps working). There is
@@ -42,7 +43,10 @@ is showing.
   the extension does not read it.
 - Current files: `codex.svg` and `copilot.svg` are all-white versions
   (root `fill="#ffffff"`); `mistral.svg` keeps the brand gradient;
-  `antigravity.png` is a direct 32px render of the original 2.4 MB SVG
+  `claude.svg` keeps the `#D97757` brand mark (`Monochrome` mode applies
+  desaturation/brightness dynamically via `Clutter` effects, just like
+  `mistral.svg` and `antigravity.png`); `antigravity.png` is a direct
+  32px render of the original 2.4 MB SVG
   (which contained 10 embedded base64 PNGs and was moved to
   `private/antigravity-original-2.4MB.svg` to keep the install light).
   The 32px PNG is pixel-identical to the SVG at HiDPI panel size and

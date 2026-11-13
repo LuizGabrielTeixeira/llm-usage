@@ -16,7 +16,7 @@ export default class CodexUsagePreferences extends ExtensionPreferences {
 
         const generalGroup = new Adw.PreferencesGroup({
             title: 'General',
-            description: 'AI subscription usage monitor (Codex, Antigravity, Copilot, Mistral)',
+            description: 'AI subscription usage monitor (Codex, Antigravity, Copilot, Mistral, Claude)',
         });
         page.add(generalGroup);
 
@@ -50,6 +50,7 @@ export default class CodexUsagePreferences extends ExtensionPreferences {
             ['provider-antigravity-enabled', 'Antigravity', 'Reads the agy usage report (requires a signed-in agy CLI)'],
             ['provider-copilot-enabled', 'Copilot', 'GitHub Copilot quota via the GitHub CLI session'],
             ['provider-mistral-enabled', 'Mistral', 'Fetches admin.mistral.ai through your Firefox session - see the Mistral group below'],
+            ['provider-claude-enabled', 'Claude', 'Claude Code OAuth (~/.claude/.credentials.json) or Firefox claude.ai session - see the Claude group below'],
         ];
         for (const [key, title, subtitle] of providerRows) {
             const row = new Adw.SwitchRow({title, subtitle});
@@ -61,22 +62,20 @@ export default class CodexUsagePreferences extends ExtensionPreferences {
             title: 'Panel Provider',
             subtitle: 'Which subscription the panel percentage reflects',
         });
+        const providers = ['codex', 'antigravity', 'copilot', 'mistral', 'claude'];
         const panelProviderModel = new Gtk.StringList();
         panelProviderModel.append('Codex');
         panelProviderModel.append('Antigravity');
         panelProviderModel.append('Copilot');
         panelProviderModel.append('Mistral');
+        panelProviderModel.append('Claude');
         panelProviderRow.set_model(panelProviderModel);
 
         const currentProvider = settings.get_string('panel-provider');
-        panelProviderRow.set_selected(currentProvider === 'antigravity' ? 1
-            : currentProvider === 'copilot' ? 2
-                : currentProvider === 'mistral' ? 3
-                    : 0);
+        panelProviderRow.set_selected(Math.max(0, providers.indexOf(currentProvider)));
 
         panelProviderRow.connect('notify::selected', () => {
             const selected = panelProviderRow.get_selected();
-            const providers = ['codex', 'antigravity', 'copilot', 'mistral'];
             settings.set_string('panel-provider', providers[selected]);
         });
         providersGroup.add(panelProviderRow);
@@ -202,7 +201,7 @@ export default class CodexUsagePreferences extends ExtensionPreferences {
 
         const additionalLimitsRow = new Adw.SwitchRow({
             title: 'Show Additional Limits',
-            subtitle: 'Display model-specific limits (e.g. GPT-5.3-Codex-Spark) in the menu',
+            subtitle: 'Display model-specific limits (e.g. GPT-5.3-Codex-Spark, Claude Sonnet) in the menu',
         });
         settings.bind(
             'show-additional-limits',
@@ -257,6 +256,34 @@ export default class CodexUsagePreferences extends ExtensionPreferences {
             wrap: true,
         });
         mistralGroup.add(mistralHint);
+
+        const claudeGroup = new Adw.PreferencesGroup({
+            title: 'Claude',
+            description: 'Uses Claude Code OAuth (~/.claude/.credentials.json) when signed in, or your Firefox claude.ai session (opt-in)',
+        });
+        page.add(claudeGroup);
+
+        const claudeFirefoxRow = new Adw.SwitchRow({
+            title: 'Fetch from Firefox session',
+            subtitle: 'Reads your claude.ai session cookie from Firefox when OAuth is unavailable (in memory only - never stored)',
+        });
+        settings.bind(
+            'claude-firefox-enabled',
+            claudeFirefoxRow,
+            'active',
+            Gio.SettingsBindFlags.DEFAULT
+        );
+        claudeGroup.add(claudeFirefoxRow);
+
+        const claudeHint = new Gtk.Label({
+            label: 'Sign in with Claude Code (claude auth login) or sign in to claude.ai in Firefox once and enable this toggle. Nothing is stored - never credentials, never cookies.',
+            xalign: 0,
+            css_classes: ['dim-label', 'caption'],
+            margin_start: 12,
+            margin_top: 4,
+            wrap: true,
+        });
+        claudeGroup.add(claudeHint);
 
         const networkGroup = new Adw.PreferencesGroup({
             title: 'Network',

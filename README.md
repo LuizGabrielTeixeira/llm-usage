@@ -2,7 +2,7 @@
 
 [![XERJ Corpus Hub contributor](https://hub.xerj.org/contributors/LuizGabrielTeixeira/badge.svg)](https://hub.xerj.org/contributors/LuizGabrielTeixeira)
 
-A GNOME Shell extension that shows your AI subscription usage in the top panel — one place to watch quotas from **OpenAI Codex**, **Google Antigravity**, **GitHub Copilot** and **Mistral** (including the student plans).
+A GNOME Shell extension that shows your AI subscription usage in the top panel — one place to watch quotas from **OpenAI Codex**, **Google Antigravity**, **GitHub Copilot**, **Mistral** (including the student plans) and **Claude**.
 
 Click the panel indicator for the full breakdown, scroll the mouse wheel over it to switch providers, or pick one from the **Provider** submenu.
 
@@ -32,25 +32,26 @@ Click the panel indicator for the full breakdown, scroll the mouse wheel over it
 | **Antigravity** | `agy` CLI usage report in JSON print mode (`agy -p /usage --output-format json`) | Antigravity CLI (`agy`) ≥ 1.1.11, signed in |
 | **Copilot** | GitHub Copilot user quota endpoint (`api.github.com/copilot_internal/user`) using your GitHub CLI token | [GitHub CLI](https://cli.github.com/) (`gh`) signed in |
 | **Mistral** | `admin.mistral.ai/subscription` page, fetched with your existing Firefox session (opt-in) | Firefox signed in to admin.mistral.ai |
+| **Claude** | `api.anthropic.com/api/oauth/usage` via Claude Code OAuth (`~/.claude/.credentials.json`), or `claude.ai/api/organizations/{id}/usage` via Firefox session (opt-in) | Claude Code signed in, or Firefox signed in to claude.ai |
 
 Codex, Antigravity and Copilot are read-only public/user endpoints; nothing is ever posted anywhere.
 
-### The Mistral workaround (why it is special)
+### The Mistral & Claude Firefox option (why it is opt-in)
 
-Mistral's official usage API (Admin API) is **Enterprise-only** — a Pro Student key (or any standard API key) cannot read usage, and the numbers only exist in the web console. This extension works around that in an opt-in way:
+Mistral's official usage API (Admin API) is **Enterprise-only** — a Pro Student key (or any standard API key) cannot read usage, and the numbers only exist in the web console. Similarly, for Claude users who sign in via Firefox at `claude.ai` rather than the Claude Code CLI (`~/.claude/.credentials.json`), usage is only exposed on the web session endpoint. This extension handles both cleanly in an opt-in way:
 
-1. The bundled Python script (`tools/mistral_web.py`) copies your Firefox `cookies.sqlite` to a private temp directory (mode `0600`, deleted right after reading — it lives for about a second).
-2. It reads the `admin.mistral.ai` session cookie **in memory only** and performs one GET of the subscription page.
-3. The two independent monthly pools (API/Studio and Vibe Code, both EUR) are parsed from the server-rendered HTML and shown as meters with an automatic "resets on the 1st" date.
+1. The bundled Python helpers (`tools/mistral_web.py` and `tools/claude_web.py`, using `tools/firefox_cookies.py`) copy your Firefox `cookies.sqlite` to a private temp directory (mode `0600`, deleted right after reading — it lives for about a second).
+2. Each helper reads only its site's session cookie **in memory only** (`admin.mistral.ai` or `claude.ai`) and performs a read-only GET (`admin.mistral.ai/subscription` HTML for Mistral, `claude.ai/api/organizations/{id}/usage` JSON for Claude).
+3. Normalized usage windows are returned as sanitized JSON (percentages, amounts, reset timestamps only — never cookies, tokens or organization IDs).
 
-The cookie is **never** stored, logged or written to GSettings. If you don't want any browser reading, leave the toggle off — the extension then shows an honest blocked state (never fake zeros).
+The cookie is **never** stored, logged or written to GSettings. If you don't want any browser reading, leave the toggle off — Mistral shows an honest unavailable/blocked hint, and Claude uses Claude Code OAuth when signed in (showing an actionable sign-in hint otherwise).
 
 Supported for the automatic fetch: native/Flatpak/Snap Firefox, Zen and LibreWolf. Chromium-family browsers encrypt their cookies and are not supported (the extension shows a clear sign-in state there).
 
 ## Privacy & security
 
-- **No credentials are ever stored.** Codex and Copilot tokens are read from the CLIs you already trust (`~/.codex/auth.json`, `gh auth token`) and used in memory for a single request.
-- **The Mistral Firefox cookie** lives in memory for one request and is then discarded; the temporary copy of `cookies.sqlite` is `chmod 0600`, in a private temp dir, deleted immediately after reading (see above).
+- **No credentials are ever stored.** Codex, Claude OAuth, and Copilot tokens are read from the CLIs you already trust (`~/.codex/auth.json`, `~/.claude/.credentials.json`, `gh auth token`) and used in memory for a single request.
+- **Firefox session cookies** (Mistral and Claude opt-in) live in memory for one request and are then discarded; the temporary copy of `cookies.sqlite` is `chmod 0600`, in a private temp dir, deleted immediately after reading (see above).
 - **GSettings contains no secrets** — UI preferences, opt-in toggles, and reset-notification baselines (reset dates, percentages and delivery markers). No monetary or request amounts are stored.
 - Nothing is telemetry'd, uploaded, or shared. The extension makes no requests other than the usage endpoints listed in the table above.
 - Errors are honest and actionable: signed out, quota page changed, provider disabled — each with advice on how to fix it.
@@ -58,8 +59,8 @@ Supported for the automatic fetch: native/Flatpak/Snap Firefox, Zen and LibreWol
 ## Requirements
 
 - GNOME Shell **46–50**
-- `python3` (only for the Mistral Firefox fetch; stdlib only, no pip packages)
-- Per provider: `codex`, `agy` and/or `gh` CLIs signed in (all optional — each provider can be toggled off in preferences)
+- `python3` (only for the opt-in Mistral/Claude Firefox fetches; stdlib only, no pip packages)
+- Per provider: `codex`, `claude`, `agy` and/or `gh` CLIs signed in (all optional — each provider can be toggled off in preferences)
 
 ## Install
 
@@ -107,7 +108,7 @@ gjs -m tools/validate-sources.js           # real one-shot fetch of all enabled 
 
 ## Icons
 
-Place `icons/<provider>.svg` or `icons/<provider>.png` (`codex`, `antigravity`, `copilot`, `mistral`) to override the panel icon per provider — there is no extension-level fallback, so a provider without an icon simply shows no icon. Transparent PNG at 32px or a normal SVG works best; see `icons/README.md`.
+Place `icons/<provider>.svg` or `icons/<provider>.png` (`codex`, `antigravity`, `copilot`, `mistral`, `claude`) to override the panel icon per provider — there is no extension-level fallback, so a provider without an icon simply shows no icon. Transparent PNG at 32px or a normal SVG works best; see `icons/README.md`.
 
 ## Showcase
 
@@ -149,4 +150,4 @@ Click the indicator for the full breakdown — one menu per provider — or pick
 - Fork chain: [Haletran/claude-usage-extension](https://github.com/Haletran/claude-usage-extension) → [kevinpita/codex-usage-extension](https://github.com/kevinpita/codex-usage-extension) → **llm-usage**.
 - Menu/UX inspiration: [ClaudeCodeUsage](https://github.com/dvdstelt/claude-code-usage) (GPL — used as inspiration only; no code or assets copied).
 
-**Not affiliated** with OpenAI, Google, GitHub or Mistral. Provider names and icons are trademarks of their respective owners; the bundled icons are simple placeholders — replace them with your own if you plan to redistribute.
+**Not affiliated** with OpenAI, Google, GitHub, Mistral or Anthropic. Provider names and icons are trademarks of their respective owners; the bundled icons are simple placeholders — replace them with your own if you plan to redistribute.

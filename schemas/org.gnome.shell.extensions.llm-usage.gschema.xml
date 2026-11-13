@@ -61,15 +61,25 @@
       <summary>Mistral provider enabled</summary>
       <description>Whether to show Mistral (Firefox session fetch)</description>
     </key>
+    <key name="provider-claude-enabled" type="b">
+      <default>true</default>
+      <summary>Claude provider enabled</summary>
+      <description>Whether to monitor Claude via Claude Code OAuth or Firefox claude.ai session</description>
+    </key>
     <key name="panel-provider" type="s">
       <default>'codex'</default>
       <summary>Panel provider</summary>
-      <description>Which provider the panel percentage reflects: 'codex', 'antigravity', 'copilot' or 'mistral'</description>
+      <description>Which provider the panel percentage reflects: 'codex', 'antigravity', 'copilot', 'mistral' or 'claude'</description>
     </key>
     <key name="mistral-firefox-enabled" type="b">
       <default>false</default>
       <summary>Mistral Firefox session fetch</summary>
       <description>Opt-in: read the admin.mistral.ai session cookie from the Firefox profile to fetch the subscription page once per refresh. The cookie is used in memory only and never stored. Requires being signed in to admin.mistral.ai in Firefox</description>
+    </key>
+    <key name="claude-firefox-enabled" type="b">
+      <default>false</default>
+      <summary>Claude Firefox session fetch</summary>
+      <description>Opt-in: read the claude.ai session cookie from the Firefox profile when Claude Code OAuth credentials are unavailable or rejected. The cookie is used in memory only and never stored. Requires being signed in to claude.ai in Firefox</description>
     </key>
     <key name="notify-on-reset" type="b">
       <default>true</default>

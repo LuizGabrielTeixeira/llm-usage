@@ -23,8 +23,10 @@ EXPECTED_SCHEMA_KEYS = {
     # multi-provider additions
     'provider-codex-enabled', 'provider-antigravity-enabled',
     'provider-copilot-enabled', 'provider-mistral-enabled',
+    'provider-claude-enabled',
     'panel-provider',
     'mistral-firefox-enabled',
+    'claude-firefox-enabled',
 }
 
 SCHEMA_PATH = ROOT / 'schemas' / 'org.gnome.shell.extensions.llm-usage.gschema.xml'
@@ -54,7 +56,7 @@ class SchemaTests(unittest.TestCase):
         return self.keys[name].find('default').text
 
     def test_provider_defaults_enabled(self):
-        for provider in ('codex', 'antigravity', 'copilot', 'mistral'):
+        for provider in ('codex', 'antigravity', 'copilot', 'mistral', 'claude'):
             self.assertEqual(self._default(f'provider-{provider}-enabled'), 'true')
 
     def test_panel_provider_default_codex(self):
@@ -74,6 +76,23 @@ class SchemaTests(unittest.TestCase):
         self.assertTrue(script.is_file(), 'tools/mistral_web.py must ship with the extension')
         content = script.read_text()
         self.assertIn('CODEX_USAGE_MISTRAL_FIXTURE_HTML', content,
+                      'fixture test mode marker missing')
+
+    def test_claude_firefox_fetch_opt_in(self):
+        self.assertEqual(
+            self._default('claude-firefox-enabled'), 'false',
+            'Firefox session reuse must be opt-in (never on by default)',
+        )
+        description = self.keys['claude-firefox-enabled'].find('description').text.lower()
+        self.assertIn('in memory only', description)
+        self.assertIn('never stored', description)
+
+    def test_claude_web_script_present(self):
+        script = ROOT / 'tools' / 'claude_web.py'
+        cookies = ROOT / 'tools' / 'firefox_cookies.py'
+        self.assertTrue(script.is_file(), 'tools/claude_web.py must ship with the extension')
+        self.assertTrue(cookies.is_file(), 'tools/firefox_cookies.py must ship with the extension')
+        self.assertIn('LLM_USAGE_CLAUDE_FIXTURE_JSON', script.read_text(),
                       'fixture test mode marker missing')
 
     def test_compiles_strict(self):
@@ -103,11 +122,17 @@ class MetadataTests(unittest.TestCase):
                         'shell-version must be a non-empty list')
 
     def test_provider_icon_files_exist(self):
-        for provider in ('codex', 'antigravity', 'copilot', 'mistral'):
+        for provider in ('codex', 'antigravity', 'copilot', 'mistral', 'claude'):
             files = [ROOT / 'icons' / f'{provider}.svg',
                      ROOT / 'icons' / f'{provider}.png']
             self.assertTrue(any(f.is_file() for f in files),
                             f'icons/{provider}.svg|png must exist')
+
+    def test_provider_usage_urls(self):
+        ext_text = (ROOT / 'extension.js').read_text(encoding='utf-8')
+        self.assertRegex(ext_text, r"mistral:\s*'https://admin\.mistral\.ai/subscription'")
+        self.assertRegex(ext_text, r"claude:\s*'https://claude\.ai/settings/usage'")
+        self.assertNotIn('console.mistral.ai/usage', ext_text)
 
 
 class ModuleResolutionTests(unittest.TestCase):
@@ -184,6 +209,20 @@ class JsContractTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0,
                          f'js tests failed:\n{combined}')
         self.assertIn('JS-TESTS:', combined)
+        self.assertIn('passed', combined)
+
+    def test_claude_source_suite_passes(self):
+        binary = shutil.which('gjs')
+        if binary is None:
+            self.skipTest('gjs not available')
+        result = subprocess.run(
+            [binary, '-m', 'tests/js/claude-source.js'],
+            cwd=ROOT, capture_output=True, text=True, timeout=60,
+        )
+        combined = result.stdout + result.stderr
+        self.assertEqual(result.returncode, 0,
+                         f'js claude-source tests failed:\n{combined}')
+        self.assertIn('JS-CLAUDE-SOURCE-TESTS:', combined)
         self.assertIn('passed', combined)
 
 
@@ -327,10 +366,28 @@ class ProviderIconTests(unittest.TestCase):
         readme = (ROOT / 'icons' / 'README.md')
         self.assertTrue(readme.exists(), 'icons/README.md must exist')
         text = readme.read_text()
-        for provider in ('codex', 'antigravity', 'copilot', 'mistral'):
+        for provider in ('codex', 'antigravity', 'copilot', 'mistral', 'claude'):
             self.assertIn(provider, text)
         self.assertIn('SVG', text)
         self.assertIn('PNG', text)
+
+    def test_claude_svg_and_icon_style_wiring(self):
+        claude_svg = ROOT / 'icons' / 'claude.svg'
+        self.assertTrue(claude_svg.is_file(), 'icons/claude.svg must exist')
+        self.assertFalse((ROOT / 'icons' / 'claude-code.svg').exists(),
+                         'claude-code.svg is not matched by provider id; keep claude.svg')
+        self.assertFalse((ROOT / 'icons' / 'claude.png').exists(),
+                         'remove redundant claude.png when claude.svg is shipped')
+        svg_text = claude_svg.read_text(encoding='utf-8')
+        self.assertIn('<svg', svg_text)
+        self.assertIn('viewBox=', svg_text)
+        self.assertIn('fill="#', svg_text)
+
+        source = (ROOT / 'extension.js').read_text(encoding='utf-8')
+        self.assertIn("'icon-style'", source)
+        self.assertIn('_updateIconStyle', source)
+        self.assertIn('DesaturateEffect', source)
+        self.assertIn('BrightnessContrastEffect', source)
 
 
 class ScrollCycleTests(unittest.TestCase):

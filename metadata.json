@@ -1,6 +1,6 @@
 {
   "name": "LLM Usage",
-  "description": "Monitor AI subscription usage in the top bar: OpenAI Codex, Google Antigravity, GitHub Copilot and Mistral. Cycle providers with the mouse wheel, pick one from the menu, and keep an eye on quota resets. Not affiliated with OpenAI, Google, GitHub or Mistral.",
+  "description": "Monitor AI subscription usage in the top bar: OpenAI Codex, Google Antigravity, GitHub Copilot, Mistral and Claude. Cycle providers with the mouse wheel, pick one from the menu, and keep an eye on quota resets. Not affiliated with OpenAI, Google, GitHub, Mistral or Anthropic.",
   "uuid": "llm-usage@LuizGabrielTeixeira",
   "shell-version": [
     "46",
