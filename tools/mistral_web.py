@@ -32,11 +32,14 @@ session cookie is the only automatic path for a Pro Student plan.
 import json
 import os
 import re
-import shutil
-import sqlite3
 import sys
-import tempfile
 from datetime import datetime, timezone
+
+_TOOLS_DIR = os.path.dirname(os.path.abspath(__file__))
+if _TOOLS_DIR not in sys.path:
+    sys.path.insert(0, _TOOLS_DIR)
+
+from firefox_cookies import firefox_profile_roots, iter_profile_cookies  # noqa: E402
 
 SUBSCRIPTION_URL = 'https://admin.mistral.ai/subscription'
 USER_AGENT = ('Mozilla/5.0 (X11; Linux x86_64; rv:132.0) '
@@ -118,18 +121,6 @@ def ok_payload(api, vibe, captured_at=None):
     }
 
 
-def firefox_profile_roots():
-    home = os.path.expanduser('~')
-    return [
-        os.path.join(home, '.mozilla/firefox'),
-        os.path.join(home,
-                     '.var/app/org.mozilla.firefox/.mozilla/firefox'),
-        os.path.join(home, 'snap/firefox/common/.mozilla/firefox'),
-        os.path.join(home, '.zen/browser'),
-        os.path.join(home, '.librewolf'),
-    ]
-
-
 def find_session_cookie():
     """Cookie header value for the admin.mistral.ai ory session, or None.
 
@@ -137,47 +128,10 @@ def find_session_cookie():
     (Firefox keeps the live database locked); the copy lives in a
     private temp dir and is deleted before returning.
     """
-    for root in firefox_profile_roots():
-        if not os.path.isdir(root):
-            continue
-        try:
-            entries = sorted(os.listdir(root))
-        except OSError:
-            continue
-        for entry in entries:
-            db = os.path.join(root, entry, 'cookies.sqlite')
-            if not os.path.isfile(db):
-                continue
-            tmpdir = tempfile.mkdtemp(prefix='codex-usage-mistral-')
-            try:
-                copy = os.path.join(tmpdir, 'cookies.sqlite')
-                shutil.copy2(db, copy)
-                os.chmod(copy, 0o600)
-                for suffix in ('-wal', '-shm'):
-                    sidecar = db + suffix
-                    if os.path.isfile(sidecar):
-                        sidecar_copy = os.path.join(
-                            tmpdir, 'cookies.sqlite' + suffix)
-                        shutil.copy2(sidecar, sidecar_copy)
-                        os.chmod(sidecar_copy, 0o600)
-                con = sqlite3.connect(
-                    'file:' + os.path.join(tmpdir, 'cookies.sqlite')
-                    + '?mode=ro',
-                    uri=True, timeout=3)
-                try:
-                    rows = con.execute(
-                        "SELECT name, value FROM moz_cookies"
-                        " WHERE (host = 'admin.mistral.ai'"
-                        " OR host = '.mistral.ai')"
-                        " AND name LIKE 'ory_session%'").fetchall()
-                finally:
-                    con.close()
-                if rows:
-                    return '; '.join('%s=%s' % (n, v) for n, v in rows)
-            except Exception:
-                continue
-            finally:
-                shutil.rmtree(tmpdir, ignore_errors=True)
+    where = ("(host = 'admin.mistral.ai' OR host = '.mistral.ai')"
+             " AND name LIKE 'ory_session%'")
+    for rows in iter_profile_cookies(where, prefix='codex-usage-mistral-'):
+        return '; '.join('%s=%s' % (n, v) for n, v in rows)
     return None
 
 
