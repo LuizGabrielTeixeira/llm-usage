@@ -548,6 +548,20 @@ class PrefsNoticeTests(unittest.TestCase):
             self.assertIn(f"'{key}'", text)
 
 
+class AccessWarningTests(unittest.TestCase):
+    def test_menu_uses_warning_helper_and_can_turn_options_off(self):
+        text = (ROOT / 'extension.js').read_text()
+        self.assertIn("from './lib/accessWarnings.js'", text)
+        self.assertIn('dialog-warning-symbolic', text)
+        self.assertIn('set_boolean(key, false)', text)
+
+    def test_every_warned_key_is_a_schema_key(self):
+        keys = {k.attrib['name'] for k in ET.parse(SCHEMA_PATH).getroot().find('schema').findall('key')}
+        helper = (ROOT / 'lib' / 'accessWarnings.js').read_text()
+        for key in re.findall(r"key: '([a-z-]+)'", helper):
+            self.assertIn(key, keys)
+
+
 class PureJsTests(unittest.TestCase):
     """Runs the GI-free unit tests with gjs, or node 22+ (older node cannot load them as ES modules)."""
 
@@ -565,7 +579,7 @@ class PureJsTests(unittest.TestCase):
 
     def test_pure_modules(self):
         runner = self._runner()
-        for name in ('claude-gate.js', 'backoff.js'):
+        for name in ('claude-gate.js', 'backoff.js', 'access-warnings.js'):
             result = subprocess.run(
                 [*runner, str(ROOT / 'tests' / 'js' / name)],
                 capture_output=True, text=True, timeout=60,

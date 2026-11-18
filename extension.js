@@ -30,6 +30,7 @@ import {AgySource} from './lib/agySource.js';
 import {CopilotSource} from './lib/copilotSource.js';
 import {MistralSource} from './lib/mistralSource.js';
 import {ClaudeSource} from './lib/claudeSource.js';
+import {activeAccessWarnings} from './lib/accessWarnings.js';
 import {ProviderCoordinator} from './lib/coordinator.js';
 import {ResetNotifier} from './lib/resetNotifications.js';
 
@@ -307,8 +308,10 @@ const UsageIndicator = GObject.registerClass(
                 this._updateFooterTime();
             } else if (key.startsWith('mistral-')) {
                 this._coordinator?.refreshProvider('mistral');
+                this._renderMenu();
             } else if (key.startsWith('claude-')) {
                 this._coordinator?.refreshProvider('claude');
+                this._renderMenu();
             }
         }
 
@@ -472,6 +475,9 @@ const UsageIndicator = GObject.registerClass(
             this._advice.visible = false;
             root.add_child(this._advice);
 
+            this._accessBox = new St.BoxLayout({vertical: true});
+            root.add_child(this._accessBox);
+
             const actions = new St.BoxLayout({style_class: 'codex-actions'});
             this._actions = actions;
 
@@ -568,6 +574,7 @@ const UsageIndicator = GObject.registerClass(
             this._limitsBox.destroy_all_children();
             this._error.visible = false;
             this._advice.visible = false;
+            this._renderAccessWarnings(favorite);
 
             if (!snap || snap.status === STATUS.LOADING) {
                 this._limitsBox.add_child(new St.Label({
@@ -614,6 +621,37 @@ const UsageIndicator = GObject.registerClass(
                         style_class: 'codex-updated',
                     }));
                 }
+            }
+        }
+
+        /** One warning row per login/cookie option that is on, each with a Turn off button. */
+        _renderAccessWarnings(providerId) {
+            this._accessBox.destroy_all_children();
+            const getBoolean = key => this._settings.get_boolean(key);
+            for (const {key, text} of activeAccessWarnings(providerId, getBoolean)) {
+                const row = new St.BoxLayout({style_class: 'codex-access-row'});
+                row.add_child(new St.Icon({
+                    icon_name: 'dialog-warning-symbolic',
+                    icon_size: 14,
+                    style_class: 'codex-access-icon',
+                    y_align: Clutter.ActorAlign.CENTER,
+                }));
+                row.add_child(new St.Label({
+                    text,
+                    style_class: 'codex-access-text',
+                    x_expand: true,
+                    y_align: Clutter.ActorAlign.CENTER,
+                }));
+                const off = new St.Button({
+                    label: 'Turn off',
+                    style_class: 'codex-footer-button',
+                    can_focus: true,
+                    reactive: true,
+                    track_hover: true,
+                });
+                off.connect('clicked', () => this._settings.set_boolean(key, false));
+                row.add_child(off);
+                this._accessBox.add_child(row);
             }
         }
 
