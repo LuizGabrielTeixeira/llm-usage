@@ -549,15 +549,25 @@ class PrefsNoticeTests(unittest.TestCase):
 
 
 class PureJsTests(unittest.TestCase):
-    """Runs the GI-free unit tests with node when it is installed."""
+    """Runs the GI-free unit tests with gjs, or node 22+ (older node cannot load them as ES modules)."""
+
+    def _runner(self):
+        gjs = shutil.which('gjs')
+        if gjs:
+            return [gjs, '-m']
+        node = shutil.which('node')
+        if node:
+            major = subprocess.run([node, '-p', 'process.versions.node.split(".")[0]'],
+                                   capture_output=True, text=True).stdout.strip()
+            if major.isdigit() and int(major) >= 22:
+                return [node]
+        self.skipTest('gjs or node 22+ not available')
 
     def test_pure_modules(self):
-        node = shutil.which('node')
-        if not node:
-            self.skipTest('node not available')
+        runner = self._runner()
         for name in ('claude-gate.js', 'backoff.js'):
             result = subprocess.run(
-                [node, str(ROOT / 'tests' / 'js' / name)],
+                [*runner, str(ROOT / 'tests' / 'js' / name)],
                 capture_output=True, text=True, timeout=60,
             )
             self.assertEqual(result.returncode, 0, f'{name} failed: {result.stdout}{result.stderr}')
