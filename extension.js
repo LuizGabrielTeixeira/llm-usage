@@ -427,7 +427,7 @@ const UsageIndicator = GObject.registerClass(
                 y_align: Clutter.ActorAlign.CENTER,
             });
             this._title = new St.Label({
-                text: 'Codex Usage',
+                text: 'LLM Usage',
                 style_class: 'codex-title',
             });
             this._subtitle = new St.Label({

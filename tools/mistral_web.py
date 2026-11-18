@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Fetch Mistral Pro Student monthly allowance usage for the codex-usage
+Fetch Mistral Pro Student monthly allowance usage for the llm-usage
 GNOME extension.
 
 How it works (user-requested 2026-10-26, opt-in via the
@@ -130,7 +130,7 @@ def find_session_cookie():
     """
     where = ("(host = 'admin.mistral.ai' OR host = '.mistral.ai')"
              " AND name LIKE 'ory_session%'")
-    for rows in iter_profile_cookies(where, prefix='codex-usage-mistral-'):
+    for rows in iter_profile_cookies(where, prefix='llm-usage-mistral-'):
         return '; '.join('%s=%s' % (n, v) for n, v in rows)
     return None
 
