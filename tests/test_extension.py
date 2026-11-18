@@ -533,7 +533,7 @@ class IdentityTests(unittest.TestCase):
     def test_no_source_impersonates_another_client(self):
         for path in (ROOT / 'lib').glob('*.js'):
             text = path.read_text()
-            for needle in ('claude-code/', 'codex-cli', 'GitHubCopilotChat'):
+            for needle in ('claude-code/', 'codex-cli', 'GitHubCopilotChat', 'Editor-Version'):
                 self.assertNotIn(needle, text, f'{path.name} contains {needle}')
 
 
