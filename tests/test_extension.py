@@ -27,6 +27,7 @@ EXPECTED_SCHEMA_KEYS = {
     'panel-provider',
     'mistral-firefox-enabled',
     'claude-firefox-enabled',
+    'claude-oauth-enabled',
 }
 
 SCHEMA_PATH = ROOT / 'schemas' / 'org.gnome.shell.extensions.llm-usage.gschema.xml'
@@ -77,6 +78,9 @@ class SchemaTests(unittest.TestCase):
         content = script.read_text()
         self.assertIn('CODEX_USAGE_MISTRAL_FIXTURE_HTML', content,
                       'fixture test mode marker missing')
+
+    def test_claude_oauth_opt_in(self):
+        self.assertEqual(self._default('claude-oauth-enabled'), 'false')
 
     def test_claude_firefox_fetch_opt_in(self):
         self.assertEqual(
@@ -516,6 +520,71 @@ class ResetNotificationWiringTests(unittest.TestCase):
 
     def test_notifier_module_exists(self):
         self.assertTrue((ROOT / 'lib' / 'resetNotifications.js').exists())
+
+
+class IdentityTests(unittest.TestCase):
+    def test_user_agent_is_own_and_used_by_sources(self):
+        identity = (ROOT / 'lib' / 'identity.js').read_text()
+        self.assertRegex(identity, r"USER_AGENT = 'llm-usage ")
+        for name in ('claudeSource', 'codexSource', 'copilotSource'):
+            text = (ROOT / 'lib' / f'{name}.js').read_text()
+            self.assertIn("from './identity.js'", text, name)
+
+    def test_no_source_impersonates_another_client(self):
+        for path in (ROOT / 'lib').glob('*.js'):
+            text = path.read_text()
+            for needle in ('claude-code/', 'codex-cli', 'GitHubCopilotChat', 'Editor-Version'):
+                self.assertNotIn(needle, text, f'{path.name} contains {needle}')
+
+
+class PrefsNoticeTests(unittest.TestCase):
+    def test_account_notice_next_to_sensitive_options(self):
+        text = (ROOT / 'prefs.js').read_text()
+        self.assertEqual(text.count('accountNotice('), 4, 'definition + three uses')
+        for url in ('code.claude.com/docs/en/legal-and-compliance',
+                    'google-gemini/gemini-cli/discussions/20632'):
+            self.assertIn(url, text)
+        for key in ('claude-oauth-enabled', 'claude-firefox-enabled', 'mistral-firefox-enabled'):
+            self.assertIn(f"'{key}'", text)
+
+
+class AccessWarningTests(unittest.TestCase):
+    def test_menu_uses_warning_helper_and_can_turn_options_off(self):
+        text = (ROOT / 'extension.js').read_text()
+        self.assertIn("from './lib/accessWarnings.js'", text)
+        self.assertIn('dialog-warning-symbolic', text)
+        self.assertIn('set_boolean(key, false)', text)
+
+    def test_every_warned_key_is_a_schema_key(self):
+        keys = {k.attrib['name'] for k in ET.parse(SCHEMA_PATH).getroot().find('schema').findall('key')}
+        helper = (ROOT / 'lib' / 'accessWarnings.js').read_text()
+        for key in re.findall(r"key: '([a-z-]+)'", helper):
+            self.assertIn(key, keys)
+
+
+class PureJsTests(unittest.TestCase):
+    """Runs the GI-free unit tests with gjs, or node 22+ (older node cannot load them as ES modules)."""
+
+    def _runner(self):
+        gjs = shutil.which('gjs')
+        if gjs:
+            return [gjs, '-m']
+        node = shutil.which('node')
+        if node:
+            major = subprocess.run([node, '-p', 'process.versions.node.split(".")[0]'],
+                                   capture_output=True, text=True).stdout.strip()
+            if major.isdigit() and int(major) >= 22:
+                return [node]
+        self.skipTest('gjs or node 22+ not available')
+
+    def test_pure_modules(self):
+        runner = self._runner()
+        for name in ('claude-gate.js', 'backoff.js', 'access-warnings.js'):
+            result = subprocess.run(
+                [*runner, str(ROOT / 'tests' / 'js' / name)],
+                capture_output=True, text=True, timeout=60,
+            )
+            self.assertEqual(result.returncode, 0, f'{name} failed: {result.stdout}{result.stderr}')
 
 
 if __name__ == '__main__':

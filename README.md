@@ -32,7 +32,7 @@ Click the panel indicator for the full breakdown, scroll the mouse wheel over it
 | **Antigravity** | `agy` CLI usage report in JSON print mode (`agy -p /usage --output-format json`) | Antigravity CLI (`agy`) ≥ 1.1.11, signed in |
 | **Copilot** | GitHub Copilot user quota endpoint (`api.github.com/copilot_internal/user`) using your GitHub CLI token | [GitHub CLI](https://cli.github.com/) (`gh`) signed in |
 | **Mistral** | `admin.mistral.ai/subscription` page, fetched with your existing Firefox session (opt-in) | Firefox signed in to admin.mistral.ai |
-| **Claude** | `api.anthropic.com/api/oauth/usage` via Claude Code OAuth (`~/.claude/.credentials.json`), or `claude.ai/api/organizations/{id}/usage` via Firefox session (opt-in) | Claude Code signed in, or Firefox signed in to claude.ai |
+| **Claude** | `api.anthropic.com/api/oauth/usage` via Claude Code OAuth (`~/.claude/.credentials.json`, opt-in), or `claude.ai/api/organizations/{id}/usage` via Firefox session (opt-in) | Claude Code signed in, or Firefox signed in to claude.ai |
 
 Codex, Antigravity and Copilot are read-only public/user endpoints; nothing is ever posted anywhere.
 
@@ -50,11 +50,26 @@ Supported for the automatic fetch: native/Flatpak/Snap Firefox, Zen and LibreWol
 
 ## Privacy & security
 
-- **No credentials are ever stored.** Codex, Claude OAuth, and Copilot tokens are read from the CLIs you already trust (`~/.codex/auth.json`, `~/.claude/.credentials.json`, `gh auth token`) and used in memory for a single request.
+- **No credentials are ever stored.** Codex, Claude OAuth (opt-in), and Copilot tokens are read from the CLIs you already trust (`~/.codex/auth.json`, `~/.claude/.credentials.json`, `gh auth token`) and used in memory for a single request.
 - **Firefox session cookies** (Mistral and Claude opt-in) live in memory for one request and are then discarded; the temporary copy of `cookies.sqlite` is `chmod 0600`, in a private temp dir, deleted immediately after reading (see above).
 - **GSettings contains no secrets** — UI preferences, opt-in toggles, and reset-notification baselines (reset dates, percentages and delivery markers). No monetary or request amounts are stored.
 - Nothing is telemetry'd, uploaded, or shared. The extension makes no requests other than the usage endpoints listed in the table above.
 - Errors are honest and actionable: signed out, quota page changed, provider disabled — each with advice on how to fix it.
+
+## Account safety
+
+Some providers restrict how subscription logins may be used by third-party tools, and may act on accounts without notice. The extension only sends read-only usage requests. Requests that use a CLI token identify themselves as `llm-usage`; the Firefox options act as your browser session, so their helpers send a browser user agent. The table shows what each provider reads so you can decide. Risk is a rough judgement, not a statement from the providers.
+
+| Provider | What it reads | Risk | How to turn it off |
+|---|---|---|---|
+| Antigravity | Output of the official `agy` CLI (`agy -p /usage`); no tokens read | Low | Disable the provider in preferences |
+| Claude (Claude Code login) | OAuth token in `~/.claude/.credentials.json` | Medium | Off by default; leave "Read Claude Code login" off |
+| Claude (Firefox) | `claude.ai` session cookie | Medium | Off by default; leave "Fetch from Firefox session" off |
+| Codex | Token in `~/.codex/auth.json` | Medium | Disable the provider in preferences |
+| Copilot | `gh auth token` | Medium | Disable the provider in preferences |
+| Mistral | `admin.mistral.ai` session cookie | Medium | Off by default; leave "Fetch from Firefox session" off |
+
+Sources: [Anthropic legal and compliance](https://code.claude.com/docs/en/legal-and-compliance) (subscription OAuth is for Claude Code and Anthropic's own apps) and a [Gemini CLI maintainer statement](https://github.com/google-gemini/gemini-cli/discussions/20632) (Google acts on third-party tools that use Gemini CLI / Antigravity logins).
 
 ## Requirements
 

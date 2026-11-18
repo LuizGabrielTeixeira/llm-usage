@@ -142,6 +142,21 @@
     color: #ffffff;
 }
 
+/* ===== credential-access warning ===== */
+.codex-access-row {
+    spacing: 6px;
+    margin-top: 8px;
+}
+
+.codex-access-icon {
+    color: #f5c542;
+}
+
+.codex-access-text {
+    font-size: 9pt;
+    color: #ffffff;
+}
+
 /* ===== actions ===== */
 .codex-actions {
     spacing: 8px;

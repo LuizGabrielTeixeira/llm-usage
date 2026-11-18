@@ -129,5 +129,34 @@ const loop = new GLib.MainLoop(null, false);
     c.destroy();
 }
 
+// --- 5) HTTP 429 backs off timer refreshes, not manual ones ------------------
+{
+    let calls = 0;
+    let reply = {providerId: 'r', status: 'error', error: {message: 'Rate limited (HTTP 429)'}};
+    const c = new ProviderCoordinator({
+        sources: [{id: 'r', source: {
+            refresh: cb => {
+                calls += 1;
+                cb(reply);
+            },
+        }}],
+        onUpdate: () => {},
+    });
+    c.setRefreshInterval(300);
+    c.refreshAll();
+    check('first refresh runs', calls === 1);
+    c.refreshDue();
+    check('timer tick skips a provider that just got a 429', calls === 1);
+    c.refreshAll();
+    check('manual refresh still runs during back-off', calls === 2);
+    reply = {providerId: 'r', status: 'ok'};
+    c.setRefreshInterval(300);
+    c.refreshDue();
+    check('back-off is cleared when the interval is reset', calls === 3);
+    c.refreshDue();
+    check('success leaves the provider on the normal timer', calls === 4);
+    c.destroy();
+}
+
 console.log(`JS-SMOKE: ${passed}/${passed + failed} passed`);
 System.exit(failed > 0 ? 1 : 0);
