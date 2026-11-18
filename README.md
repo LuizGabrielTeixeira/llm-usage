@@ -58,7 +58,7 @@ Supported for the automatic fetch: native/Flatpak/Snap Firefox, Zen and LibreWol
 
 ## Account safety
 
-Some providers restrict how subscription logins may be used by third-party tools, and may act on accounts without notice. The extension only sends read-only usage requests, identifies itself as `llm-usage`, and does not hide what it is, but the table shows what each provider reads so you can decide. Risk is a rough judgement, not a statement from the providers.
+Some providers restrict how subscription logins may be used by third-party tools, and may act on accounts without notice. The extension only sends read-only usage requests. Requests that use a CLI token identify themselves as `llm-usage`; the Firefox options act as your browser session, so their helpers send a browser user agent. The table shows what each provider reads so you can decide. Risk is a rough judgement, not a statement from the providers.
 
 | Provider | What it reads | Risk | How to turn it off |
 |---|---|---|---|
