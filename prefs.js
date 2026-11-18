@@ -58,6 +58,9 @@ export default class CodexUsagePreferences extends ExtensionPreferences {
             providersGroup.add(row);
         }
 
+        providersGroup.add(accountNotice(
+            'Codex and Claude read the token of a CLI you already use, and the Firefox options read a session cookie. All in memory only.'));
+
         const panelProviderRow = new Adw.ComboRow({
             title: 'Panel Provider',
             subtitle: 'Which subscription the panel percentage reflects',
@@ -256,6 +259,7 @@ export default class CodexUsagePreferences extends ExtensionPreferences {
             wrap: true,
         });
         mistralGroup.add(mistralHint);
+        mistralGroup.add(accountNotice('This reads your Firefox session cookie.'));
 
         const claudeGroup = new Adw.PreferencesGroup({
             title: 'Claude',
@@ -296,6 +300,7 @@ export default class CodexUsagePreferences extends ExtensionPreferences {
             wrap: true,
         });
         claudeGroup.add(claudeHint);
+        claudeGroup.add(accountNotice('These options read your Claude Code token or your claude.ai session cookie.'));
 
         const networkGroup = new Adw.PreferencesGroup({
             title: 'Network',
@@ -322,4 +327,21 @@ export default class CodexUsagePreferences extends ExtensionPreferences {
         });
         networkGroup.add(proxyHint);
     }
+}
+
+const ACCOUNT_NOTICE_LINKS =
+    'Providers may restrict accounts that use subscription logins from third-party tools - see ' +
+    '<a href="https://code.claude.com/docs/en/legal-and-compliance">Anthropic</a> and ' +
+    '<a href="https://github.com/google-gemini/gemini-cli/discussions/20632">Google</a>.';
+
+function accountNotice(what) {
+    return new Gtk.Label({
+        label: `${what} ${ACCOUNT_NOTICE_LINKS}`,
+        use_markup: true,
+        xalign: 0,
+        css_classes: ['dim-label', 'caption'],
+        margin_start: 12,
+        margin_top: 4,
+        wrap: true,
+    });
 }
