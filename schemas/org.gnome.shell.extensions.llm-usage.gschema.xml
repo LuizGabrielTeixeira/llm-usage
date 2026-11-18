@@ -76,10 +76,15 @@
       <summary>Mistral Firefox session fetch</summary>
       <description>Opt-in: read the admin.mistral.ai session cookie from the Firefox profile to fetch the subscription page once per refresh. The cookie is used in memory only and never stored. Requires being signed in to admin.mistral.ai in Firefox</description>
     </key>
+    <key name="claude-oauth-enabled" type="b">
+      <default>false</default>
+      <summary>Claude Code login</summary>
+      <description>Opt-in: read the Claude Code OAuth token from ~/.claude/.credentials.json and use it in memory to query Anthropic's usage endpoint. The token is never stored. Anthropic's terms restrict use of subscription logins by third-party tools</description>
+    </key>
     <key name="claude-firefox-enabled" type="b">
       <default>false</default>
       <summary>Claude Firefox session fetch</summary>
-      <description>Opt-in: read the claude.ai session cookie from the Firefox profile when Claude Code OAuth credentials are unavailable or rejected. The cookie is used in memory only and never stored. Requires being signed in to claude.ai in Firefox</description>
+      <description>Opt-in: read the claude.ai session cookie from the Firefox profile when the Claude Code login is off, unavailable or rejected. The cookie is used in memory only and never stored. Requires being signed in to claude.ai in Firefox</description>
     </key>
     <key name="notify-on-reset" type="b">
       <default>true</default>

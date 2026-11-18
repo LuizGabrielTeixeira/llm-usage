@@ -21,11 +21,13 @@ function check(name, cond) {
     }
 }
 
-function makeSettingsStub({firefoxEnabled = false} = {}) {
+function makeSettingsStub({firefoxEnabled = false, oauthEnabled = true} = {}) {
     return {
         get_boolean(key) {
             if (key === 'claude-firefox-enabled')
                 return firefoxEnabled;
+            if (key === 'claude-oauth-enabled')
+                return oauthEnabled;
             return false;
         },
     };
@@ -174,6 +176,20 @@ try {
             snap?.providerId === 'claude' &&
             snap.status === STATUS.UNAVAILABLE &&
             snap.error?.message === 'No quota windows reported');
+    }
+
+    // 4b. OAuth opt-in off + Firefox off -> UNAVAILABLE without touching credentials
+    {
+        const source = new ClaudeSource({
+            settings: makeSettingsStub({oauthEnabled: false, firefoxEnabled: false}),
+            extensionPath: repoRoot,
+        });
+        const snap = runRefresh(source);
+        source.destroy();
+        check('oauth off + firefox off returns unavailable Claude is turned off',
+            snap?.providerId === 'claude' &&
+            snap.status === STATUS.UNAVAILABLE &&
+            snap.error?.message === 'Claude is turned off');
     }
 
     // 5. Pre-cancelled Gio.Cancellable -> ERROR ('Cancelled')

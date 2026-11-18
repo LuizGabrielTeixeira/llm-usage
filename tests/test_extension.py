@@ -27,6 +27,7 @@ EXPECTED_SCHEMA_KEYS = {
     'panel-provider',
     'mistral-firefox-enabled',
     'claude-firefox-enabled',
+    'claude-oauth-enabled',
 }
 
 SCHEMA_PATH = ROOT / 'schemas' / 'org.gnome.shell.extensions.llm-usage.gschema.xml'
@@ -77,6 +78,9 @@ class SchemaTests(unittest.TestCase):
         content = script.read_text()
         self.assertIn('CODEX_USAGE_MISTRAL_FIXTURE_HTML', content,
                       'fixture test mode marker missing')
+
+    def test_claude_oauth_opt_in(self):
+        self.assertEqual(self._default('claude-oauth-enabled'), 'false')
 
     def test_claude_firefox_fetch_opt_in(self):
         self.assertEqual(
