@@ -33,6 +33,14 @@ check('success resets to the base interval', nextDelaySeconds(300, 1800, ok) ===
 check('other errors keep the current delay', nextDelaySeconds(300, 1200, other) === 1200);
 check('other errors never go below the base', nextDelaySeconds(300, 60, other) === 300);
 
+const withRetry = seconds => ({...limited, retryAfterSeconds: seconds});
+check('Retry-After longer than doubling wins', nextDelaySeconds(300, 300, withRetry(900)) === 900);
+check('Retry-After shorter than doubling is ignored', nextDelaySeconds(300, 300, withRetry(10)) === 600);
+check('Retry-After is capped at 1 hour', nextDelaySeconds(300, 300, withRetry(99999)) === 3600);
+check('Retry-After NaN or negative is ignored',
+    nextDelaySeconds(300, 300, withRetry(NaN)) === 600 &&
+    nextDelaySeconds(300, 300, withRetry(-5)) === 600);
+
 const exit = typeof process !== 'undefined'
     ? code => process.exit(code)
     : (await import('system')).default.exit;
