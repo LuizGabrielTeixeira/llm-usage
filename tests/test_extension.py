@@ -537,6 +537,17 @@ class IdentityTests(unittest.TestCase):
                 self.assertNotIn(needle, text, f'{path.name} contains {needle}')
 
 
+class PrefsNoticeTests(unittest.TestCase):
+    def test_account_notice_next_to_sensitive_options(self):
+        text = (ROOT / 'prefs.js').read_text()
+        self.assertEqual(text.count('accountNotice('), 4, 'definition + three uses')
+        for url in ('code.claude.com/docs/en/legal-and-compliance',
+                    'google-gemini/gemini-cli/discussions/20632'):
+            self.assertIn(url, text)
+        for key in ('claude-oauth-enabled', 'claude-firefox-enabled', 'mistral-firefox-enabled'):
+            self.assertIn(f"'{key}'", text)
+
+
 class PureJsTests(unittest.TestCase):
     """Runs the GI-free unit tests with node when it is installed."""
 
