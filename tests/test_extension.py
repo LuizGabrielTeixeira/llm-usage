@@ -537,5 +537,20 @@ class IdentityTests(unittest.TestCase):
                 self.assertNotIn(needle, text, f'{path.name} contains {needle}')
 
 
+class PureJsTests(unittest.TestCase):
+    """Runs the GI-free unit tests with node when it is installed."""
+
+    def test_pure_modules(self):
+        node = shutil.which('node')
+        if not node:
+            self.skipTest('node not available')
+        for name in ('claude-gate.js', 'backoff.js'):
+            result = subprocess.run(
+                [node, str(ROOT / 'tests' / 'js' / name)],
+                capture_output=True, text=True, timeout=60,
+            )
+            self.assertEqual(result.returncode, 0, f'{name} failed: {result.stdout}{result.stderr}')
+
+
 if __name__ == '__main__':
     unittest.main()

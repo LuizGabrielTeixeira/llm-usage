@@ -875,11 +875,12 @@ const UsageIndicator = GObject.registerClass(
 
         _startTimer() {
             const interval = this._settings.get_int('refresh-interval');
+            this._coordinator?.setRefreshInterval(interval);
             this._timerId = GLib.timeout_add_seconds(
                 GLib.PRIORITY_DEFAULT,
                 interval,
                 () => {
-                    this._refreshAll();
+                    this._coordinator?.refreshDue();
                     return GLib.SOURCE_CONTINUE;
                 }
             );
