@@ -518,5 +518,20 @@ class ResetNotificationWiringTests(unittest.TestCase):
         self.assertTrue((ROOT / 'lib' / 'resetNotifications.js').exists())
 
 
+class IdentityTests(unittest.TestCase):
+    def test_user_agent_is_own_and_used_by_sources(self):
+        identity = (ROOT / 'lib' / 'identity.js').read_text()
+        self.assertRegex(identity, r"USER_AGENT = 'llm-usage ")
+        for name in ('claudeSource', 'codexSource', 'copilotSource'):
+            text = (ROOT / 'lib' / f'{name}.js').read_text()
+            self.assertIn("from './identity.js'", text, name)
+
+    def test_no_source_impersonates_another_client(self):
+        for path in (ROOT / 'lib').glob('*.js'):
+            text = path.read_text()
+            for needle in ('claude-code/', 'codex-cli', 'GitHubCopilotChat'):
+                self.assertNotIn(needle, text, f'{path.name} contains {needle}')
+
+
 if __name__ == '__main__':
     unittest.main()
